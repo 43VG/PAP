@@ -3,86 +3,113 @@ import pandas as pd             # Lê e trabalha com ficheiros Excel
 import plotly.express as px     # Cria gráficos interativos
 import plotly.io as pio         # Exporta gráficos como imagem ou PDF
 import io                       # Cria ficheiros na memória
-from pathlib import Path        # Lida com caminhos (não está a ser usado aqui)
 
-# Define o título da aba e o layout do site
 st.set_page_config(page_title="Visualizador de Excel", layout="wide")
 
-# Cabeçalho principal (com HTML)
+# Título do site
 st.markdown("""
     <h1 style='text-align: center; color: #3366cc;'>📊 Visualizador de Gráficos a partir de Excel</h1>
 """, unsafe_allow_html=True)
 
-# Input para carregar vários ficheiros Excel
+# Upload múltiplo de ficheiros Excel
 with st.expander("📁 Carrega os teus ficheiros Excel"):
-    uploaded_files = st.file_uploader("Seleciona um ou mais ficheiros", type=["xlsx"], accept_multiple_files=True)  # Upload múltiplo
+    ficheiros_excel = st.file_uploader("Seleciona um ou mais ficheiros", type=["xlsx"], accept_multiple_files=True)
 
-# Se o utilizador carregar ficheiros
-if uploaded_files:
-    todos_dfs = []  # Lista para guardar os DataFrames
+if ficheiros_excel:
+    todos_dfs = []
 
-    for uploaded_file in uploaded_files:
-        folhas = pd.ExcelFile(uploaded_file).sheet_names  # Lista folhas do Excel
-        folhas_selecionadas = st.multiselect(f"📄 Folhas de: {uploaded_file.name}", folhas, default=folhas[:1])  # Seleção múltipla
+    for ficheiro in ficheiros_excel:
+        folhas = pd.ExcelFile(ficheiro).sheet_names
+        folhas_escolhidas = st.multiselect(f"📄 Folhas de: {ficheiro.name}", folhas, default=folhas[:1])
 
-        for folha in folhas_selecionadas:
-            df = pd.read_excel(uploaded_file, sheet_name=folha)  # Lê folha
-            df["Fonte"] = uploaded_file.name  # Adiciona nome do ficheiro
-            df["Folha"] = folha  # Adiciona nome da folha
-            todos_dfs.append(df)  # Adiciona ao conjunto final
+        for folha in folhas_escolhidas:
+            dados = pd.read_excel(ficheiro, sheet_name=folha)
+            dados["Ficheiro"] = ficheiro.name
+            dados["Folha"] = folha
+            dados = dados.loc[:, ~dados.columns.str.contains("^Unnamed")]  # Elimina colunas tipo "Unnamed"
+            todos_dfs.append(dados)
 
-    df = pd.concat(todos_dfs, ignore_index=True)  # Junta todos os dados num só DataFrame
+    if todos_dfs:
+        df_final = pd.concat(todos_dfs, ignore_index=True)
 
-    # Secção da tabela
-    with st.expander("📋 Pré-visualização dos dados"):
-        st.dataframe(df)  # Mostra a tabela
+        # Pré-visualização dos dados
+        with st.expander("📋 Pré-visualização dos dados"):
+            st.dataframe(df_final)
 
-    if not df.empty:
-        st.markdown("## 🎨 Gráfico Personalizado")  # Subtítulo da secção de gráficos
+        st.markdown("## 🎨 Gráfico Personalizado")
 
-        col1, col2 = st.columns(2)  # Divide filtros em duas colunas
-
-        colunas = df.columns.tolist()  # Lista de colunas do DataFrame
+        col1, col2 = st.columns(2)
+        colunas = df_final.columns.tolist()
 
         with col1:
-            x_col = st.selectbox("🧩 Coluna X", colunas)  # Seleciona eixo X
+            x_coluna = st.selectbox("🧩 Coluna X", colunas)
         with col2:
-            y_col = st.selectbox("🎯 Coluna Y", colunas)  # Seleciona eixo Y
+            y_coluna = st.selectbox("🎯 Coluna Y", colunas)
 
-        tipo_grafico = st.selectbox("📈 Tipo de gráfico", ["Barras", "Linhas", "Pizza"])  # Escolha do tipo de gráfico
+        tipo = st.selectbox("📈 Tipo de gráfico", ["Barras", "Linhas", "Pizza"])
 
-        # Gera gráfico consoante o tipo escolhido
-        if tipo_grafico == "Barras":
-            fig = px.bar(df, x=x_col, y=y_col, title=f"{y_col} por {x_col}", color=x_col)  # Gráfico de barras
-        elif tipo_grafico == "Linhas":
-            fig = px.line(df, x=x_col, y=y_col, title=f"{y_col} por {x_col}")  # Gráfico de linhas
-        elif tipo_grafico == "Pizza":
-            fig = px.pie(df, names=x_col, values=y_col, title=f"{y_col} por {x_col}")  # Gráfico de pizza
+        if tipo == "Barras":
+            grafico = px.bar(df_final, x=x_coluna, y=y_coluna, title=f"{y_coluna} por {x_coluna}", color=x_coluna)
+        elif tipo == "Linhas":
+            dados_agrupados = df_final.groupby(x_coluna, as_index=False)[y_coluna].sum()
+            grafico = px.line(dados_agrupados, x=x_coluna, y=y_coluna, title=f"{y_coluna} por {x_coluna}")
+        elif tipo == "Pizza":
+            grafico = px.pie(df_final, names=x_coluna, values=y_coluna, title=f"{y_coluna} por {x_coluna}")
 
-        st.plotly_chart(fig, use_container_width=True)  # Mostra gráfico no ecrã
+        st.plotly_chart(grafico, use_container_width=True)
 
-        col3, col4 = st.columns(2)  # Botões lado a lado
+        # Botões de exportação
+        col3, col4 = st.columns(2)
 
         with col3:
-            if st.button("📥 Exportar Gráfico como PNG"):  # Botão para exportar como imagem
-                buffer_img = io.BytesIO()  # Cria buffer na memória
-                pio.write_image(fig, buffer_img, format='png')  # Grava imagem no buffer
-                st.download_button(  # Botão para descarregar imagem
+            if st.button("📥 Exportar Gráfico como PNG"):
+                buffer_png = io.BytesIO()
+                pio.write_image(grafico, buffer_png, format='png')
+                st.download_button(
                     label="Descarregar PNG",
-                    data=buffer_img.getvalue(),
+                    data=buffer_png.getvalue(),
                     file_name="grafico.png",
                     mime="image/png"
                 )
 
         with col4:
-            if st.button("📥 Exportar Gráfico como PDF"):  # Botão para exportar como PDF
-                buffer_pdf = io.BytesIO()  # Cria buffer na memória
-                pio.write_image(fig, buffer_pdf, format='pdf')  # Grava PDF no buffer
-                st.download_button(  # Botão para descarregar PDF
+            if st.button("📥 Exportar Gráfico como PDF"):
+                buffer_pdf = io.BytesIO()
+                pio.write_image(grafico, buffer_pdf, format='pdf')
+                st.download_button(
                     label="Descarregar PDF",
                     data=buffer_pdf.getvalue(),
                     file_name="grafico.pdf",
                     mime="application/pdf"
                 )
+
+        # Secção de vários gráficos automáticos
+        st.markdown("## 🧠 Gráficos Gerados Automaticamente")
+
+        tipos_graficos = st.multiselect(
+            "Seleciona os tipos de gráficos que queres gerar automaticamente:",
+            ["Barras", "Linhas", "Pizza"]
+        )
+
+        colunas_numericas = df_final.select_dtypes(include='number').columns.tolist()
+        colunas_texto = df_final.select_dtypes(include='object').columns.tolist()
+
+        if not colunas_numericas or not colunas_texto:
+            st.warning("É necessário ter pelo menos uma coluna de texto e uma coluna numérica.")
+        else:
+            coluna_x_auto = colunas_texto[0]
+           
+            colunas_layout = st.columns(len(tipos_graficos)) # Divide dinamicamente o layout dependendo do número de gráficos escolhidos.
+            for i, tipo in enumerate(tipos_graficos):
+                with colunas_layout[i]:
+                    st.markdown(f"**Gráfico de {tipo}**")
+                    if tipo == "Barras":
+                        fig = px.bar(df_final, x=coluna_x_auto, y=colunas_numericas[0])
+                    elif tipo == "Linhas":
+                        df_agrupado = df_final.groupby(coluna_x_auto, as_index=False)[colunas_numericas[0]].sum()
+                        fig = px.line(df_agrupado, x=coluna_x_auto, y=colunas_numericas[0])
+                    elif tipo == "Pizza":
+                        fig = px.pie(df_final, names=coluna_x_auto, values=colunas_numericas[0])
+                    st.plotly_chart(fig, use_container_width=True)
     else:
-        st.warning("A folha selecionada está vazia.")  # Alerta se não houver dados
+        st.warning("Não foram encontrados dados nas folhas selecionadas.")
