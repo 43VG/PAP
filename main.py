@@ -31,23 +31,19 @@ if ficheiros_excel:
 
     if todos_dfs:
         df_final = pd.concat(todos_dfs, ignore_index=True)
-
-        # Pré-visualização dos dados
-        with st.expander("📋 Pré-visualização dos dados"):
+        with st.expander("📋 Pré-visualização dos dados"): # Pré-visualização dos dados
             st.dataframe(df_final)
-
         st.markdown("## 🎨 Gráfico Personalizado")
-
+        
         col1, col2 = st.columns(2)
-        colunas = df_final.columns.tolist()
+        colunas_validas = [col for col in df_final.columns if col not in ["Ficheiro", "Folha"]]# Filtrar colunas válidas (exclui "Ficheiro" e "Folha")
 
         with col1:
-            x_coluna = st.selectbox("🧩 Coluna X", colunas)
+            x_coluna = st.selectbox("🧩 Coluna X", colunas_validas)
         with col2:
-            y_coluna = st.selectbox("🎯 Coluna Y", colunas)
+            y_coluna = st.selectbox("🎯 Coluna Y", colunas_validas)
 
         tipo = st.selectbox("📈 Tipo de gráfico", ["Barras", "Linhas", "Pizza"])
-
         if tipo == "Barras":
             grafico = px.bar(df_final, x=x_coluna, y=y_coluna, title=f"{y_coluna} por {x_coluna}", color=x_coluna)
         elif tipo == "Linhas":
