@@ -34,7 +34,7 @@ if ficheiros_excel:
         with st.expander("📋 Pré-visualização dos dados"): # Pré-visualização dos dados
             st.dataframe(df_final)
         st.markdown("## 🎨 Gráfico Personalizado")
-        
+
         col1, col2 = st.columns(2)
         colunas_validas = [col for col in df_final.columns if col not in ["Ficheiro", "Folha"]]# Filtrar colunas válidas (exclui "Ficheiro" e "Folha")
 
@@ -94,18 +94,18 @@ if ficheiros_excel:
             st.warning("É necessário ter pelo menos uma coluna de texto e uma coluna numérica.")
         else:
             coluna_x_auto = colunas_texto[0]
-           
-            colunas_layout = st.columns(len(tipos_graficos)) # Divide dinamicamente o layout dependendo do número de gráficos escolhidos.
-            for i, tipo in enumerate(tipos_graficos):
-                with colunas_layout[i]:
-                    st.markdown(f"**Gráfico de {tipo}**")
-                    if tipo == "Barras":
-                        fig = px.bar(df_final, x=coluna_x_auto, y=colunas_numericas[0])
-                    elif tipo == "Linhas":
-                        df_agrupado = df_final.groupby(coluna_x_auto, as_index=False)[colunas_numericas[0]].sum()
-                        fig = px.line(df_agrupado, x=coluna_x_auto, y=colunas_numericas[0])
-                    elif tipo == "Pizza":
-                        fig = px.pie(df_final, names=coluna_x_auto, values=colunas_numericas[0])
-                    st.plotly_chart(fig, use_container_width=True)
+            if tipos_graficos:  # Só desenha se o utilizador escolher pelo menos um tipo, para nao aparecer erro
+                colunas_layout = st.columns(len(tipos_graficos))
+                for i, tipo in enumerate(tipos_graficos):
+                    with colunas_layout[i]:
+                        st.markdown(f"**Gráfico de {tipo}**")
+                        if tipo == "Barras":
+                            fig = px.bar(df_final, x=coluna_x_auto, y=colunas_numericas[0])
+                        elif tipo == "Linhas":
+                            df_agrupado = df_final.groupby(coluna_x_auto, as_index=False)[colunas_numericas[0]].sum()
+                            fig = px.line(df_agrupado, x=coluna_x_auto, y=colunas_numericas[0])
+                        elif tipo == "Pizza":
+                            fig = px.pie(df_final, names=coluna_x_auto, values=colunas_numericas[0])
+                        st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("Não foram encontrados dados nas folhas selecionadas.")
