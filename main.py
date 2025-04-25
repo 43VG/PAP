@@ -1,7 +1,7 @@
-import streamlit as st           # Cria o site interativo
+import streamlit as st          # Cria o site interativo
 import pandas as pd             # Lê e trabalha com ficheiros Excel
 import plotly.express as px     # Cria gráficos interativos
-import plotly.io as pio         # Exporta gráficos como imagem ou PDF
+import plotly.io as pio         # Exporta imagens
 import io                       # Cria ficheiros na memória
 
 st.set_page_config(page_title="Visualizador de Excel", layout="wide")
@@ -23,66 +23,20 @@ if ficheiros_excel:
         folhas_escolhidas = st.multiselect(f"📄 Folhas de: {ficheiro.name}", folhas, default=folhas[:1])
 
         for folha in folhas_escolhidas:
-            # 🆕 Tenta detetar os dados automaticamente ignorando cabeçalhos vazios
-            temp_df = pd.read_excel(ficheiro, sheet_name=folha, header=None)
-            primeira_linha_valida = temp_df.dropna(how="all").index[0]
+            dados = pd.read_excel(ficheiro, sheet_name=folha, header=None)
+            primeira_linha_valida = dados.dropna(how='all').index.min()
             dados = pd.read_excel(ficheiro, sheet_name=folha, skiprows=primeira_linha_valida)
             dados["Ficheiro"] = ficheiro.name
             dados["Folha"] = folha
-            dados = dados.loc[:, ~dados.columns.str.contains("^Unnamed")]  # Elimina colunas tipo "Unnamed"
+            dados = dados.loc[:, ~dados.columns.str.contains("^Unnamed")]
             todos_dfs.append(dados)
 
     if todos_dfs:
         df_final = pd.concat(todos_dfs, ignore_index=True)
-        with st.expander("📋 Pré-visualização dos dados"): # Pré-visualização dos dados
+        with st.expander("📋 Pré-visualização dos dados"):
             st.dataframe(df_final)
-        st.markdown("## 🎨 Gráfico Personalizado")
 
-        col1, col2 = st.columns(2)
-        colunas_validas = [col for col in df_final.columns if col not in ["Ficheiro", "Folha"]]# Filtrar colunas válidas (exclui "Ficheiro" e "Folha")
-
-        with col1:
-            x_coluna = st.selectbox("🧩 Coluna X", colunas_validas)
-        with col2:
-            y_coluna = st.selectbox("🎯 Coluna Y", colunas_validas)
-
-        tipo = st.selectbox("📈 Tipo de gráfico", ["Barras", "Linhas", "Pizza"])
-        if tipo == "Barras":
-            grafico = px.bar(df_final, x=x_coluna, y=y_coluna, title=f"{y_coluna} por {x_coluna}", color=x_coluna)
-        elif tipo == "Linhas":
-            dados_agrupados = df_final.groupby(x_coluna, as_index=False)[y_coluna].sum()
-            grafico = px.line(dados_agrupados, x=x_coluna, y=y_coluna, title=f"{y_coluna} por {x_coluna}")
-        elif tipo == "Pizza":
-            grafico = px.pie(df_final, names=x_coluna, values=y_coluna, title=f"{y_coluna} por {x_coluna}")
-
-        st.plotly_chart(grafico, use_container_width=True)
-
-        # Botões de exportação
-        col3, col4 = st.columns(2)
-
-        with col3:
-            if st.button("📥 Exportar Gráfico como PNG"):
-                buffer_png = io.BytesIO()
-                pio.write_image(grafico, buffer_png, format='png')
-                st.download_button(
-                    label="Descarregar PNG",
-                    data=buffer_png.getvalue(),
-                    file_name="grafico.png",
-                    mime="image/png"
-                )
-
-        with col4:
-            if st.button("📥 Exportar Gráfico como PDF"):
-                buffer_pdf = io.BytesIO()
-                pio.write_image(grafico, buffer_pdf, format='pdf')
-                st.download_button(
-                    label="Descarregar PDF",
-                    data=buffer_pdf.getvalue(),
-                    file_name="grafico.pdf",
-                    mime="application/pdf"
-                )
-
-        # Secção de vários gráficos automáticos
+        # Gráficos automáticos
         st.markdown("## 🧠 Gráficos Gerados Automaticamente")
 
         tipos_graficos = st.multiselect(
@@ -96,11 +50,10 @@ if ficheiros_excel:
         if not colunas_numericas or not colunas_texto:
             st.warning("É necessário ter pelo menos uma coluna de texto e uma coluna numérica.")
         else:
-            # 🆕 Seletor de colunas para os gráficos automáticos
             coluna_x_auto = st.selectbox("🧩 Coluna de Texto (X ou Nomes)", colunas_texto)
             coluna_y_auto = st.selectbox("🎯 Coluna Numérica (Y ou Valores)", colunas_numericas)
 
-            if tipos_graficos:  # Só desenha se o utilizador escolher pelo menos um tipo, para nao aparecer erro
+            if tipos_graficos:
                 colunas_layout = st.columns(len(tipos_graficos))
                 for i, tipo in enumerate(tipos_graficos):
                     with colunas_layout[i]:
@@ -113,5 +66,28 @@ if ficheiros_excel:
                         elif tipo == "Pizza":
                             fig = px.pie(df_final, names=coluna_x_auto, values=coluna_y_auto)
                         st.plotly_chart(fig, use_container_width=True)
+
+                        # Exportação
+                        col3, col4 = st.columns(2)
+                        with col3:
+                            if st.button(f"📥 Exportar {tipo} como PNG", key=f"{tipo}_png"):
+                                buffer_png = io.BytesIO()
+                                pio.write_image(fig, buffer_png, format='png')
+                                st.download_button(
+                                    label="Descarregar PNG",
+                                    data=buffer_png.getvalue(),
+                                    file_name=f"grafico_{tipo.lower()}.png",
+                                    mime="image/png"
+                                )
+                        with col4:
+                            if st.button(f"📥 Exportar {tipo} como PDF", key=f"{tipo}_pdf"):
+                                buffer_pdf = io.BytesIO()
+                                pio.write_image(fig, buffer_pdf, format='pdf')
+                                st.download_button(
+                                    label="Descarregar PDF",
+                                    data=buffer_pdf.getvalue(),
+                                    file_name=f"grafico_{tipo.lower()}.pdf",
+                                    mime="application/pdf"
+                                )
     else:
         st.warning("Não foram encontrados dados nas folhas selecionadas.")
