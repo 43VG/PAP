@@ -10,9 +10,7 @@ st.set_page_config(page_title="Visualizador de Excel", layout="wide")
 st.markdown("""
     <h1 style='text-align: center; color: #3366cc;'>📊 Visualizador de Gráficos a partir de Excel</h1>
 """, unsafe_allow_html=True)
-
-# Upload múltiplo de ficheiros Excel
-with st.expander("📁 Carrega os teus ficheiros Excel"):
+with st.expander("📁 Carrega os teus ficheiros Excel"):# Upload múltiplo de ficheiros Excel
     ficheiros_excel = st.file_uploader("Seleciona um ou mais ficheiros", type=["xlsx"], accept_multiple_files=True)
 
 if ficheiros_excel:
@@ -23,7 +21,9 @@ if ficheiros_excel:
         folhas_escolhidas = st.multiselect(f"📄 Folhas de: {ficheiro.name}", folhas, default=folhas[:1])
 
         for folha in folhas_escolhidas:
-            dados = pd.read_excel(ficheiro, sheet_name=folha)
+            df_temp = pd.read_excel(ficheiro, sheet_name=folha, header=None) #Tenta ler a folha para encontrar onde começam os dados
+            primeira_linha_valida = df_temp.dropna(how='all').index[0]  # Linha onde começam os dados // dropna(how='all') = primeira linha com dados reais
+            dados = pd.read_excel(ficheiro, sheet_name=folha, header=primeira_linha_valida)#Releitura com header(cabeçalho) correto
             dados["Ficheiro"] = ficheiro.name
             dados["Folha"] = folha
             dados = dados.loc[:, ~dados.columns.str.contains("^Unnamed")]  # Elimina colunas tipo "Unnamed"
@@ -54,8 +54,8 @@ if ficheiros_excel:
 
         st.plotly_chart(grafico, use_container_width=True)
 
-        # Botões de exportação
-        col3, col4 = st.columns(2)
+
+        col3, col4 = st.columns(2)# Botões de exportação
 
         with col3:
             if st.button("📥 Exportar Gráfico como PNG"):
@@ -79,8 +79,7 @@ if ficheiros_excel:
                     mime="application/pdf"
                 )
 
-        # Secção de vários gráficos automáticos
-        st.markdown("## 🧠 Gráficos Gerados Automaticamente")
+        st.markdown("## 🧠 Gráficos Gerados Automaticamente")# Secção de vários gráficos automáticos
 
         tipos_graficos = st.multiselect(
             "Seleciona os tipos de gráficos que queres gerar automaticamente:",
