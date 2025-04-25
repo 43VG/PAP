@@ -10,7 +10,9 @@ st.set_page_config(page_title="Visualizador de Excel", layout="wide")
 st.markdown("""
     <h1 style='text-align: center; color: #3366cc;'>📊 Visualizador de Gráficos a partir de Excel</h1>
 """, unsafe_allow_html=True)
-with st.expander("📁 Carrega os teus ficheiros Excel"):# Upload múltiplo de ficheiros Excel
+
+# Upload múltiplo de ficheiros Excel
+with st.expander("📁 Carrega os teus ficheiros Excel"):
     ficheiros_excel = st.file_uploader("Seleciona um ou mais ficheiros", type=["xlsx"], accept_multiple_files=True)
 
 if ficheiros_excel:
@@ -21,9 +23,10 @@ if ficheiros_excel:
         folhas_escolhidas = st.multiselect(f"📄 Folhas de: {ficheiro.name}", folhas, default=folhas[:1])
 
         for folha in folhas_escolhidas:
-            df_temp = pd.read_excel(ficheiro, sheet_name=folha, header=None) #Tenta ler a folha para encontrar onde começam os dados
-            primeira_linha_valida = df_temp.dropna(how='all').index[0]  # Linha onde começam os dados // dropna(how='all') = primeira linha com dados reais
-            dados = pd.read_excel(ficheiro, sheet_name=folha, header=primeira_linha_valida)#Releitura com header(cabeçalho) correto
+            # 🆕 Tenta detetar os dados automaticamente ignorando cabeçalhos vazios
+            temp_df = pd.read_excel(ficheiro, sheet_name=folha, header=None)
+            primeira_linha_valida = temp_df.dropna(how="all").index[0]
+            dados = pd.read_excel(ficheiro, sheet_name=folha, skiprows=primeira_linha_valida)
             dados["Ficheiro"] = ficheiro.name
             dados["Folha"] = folha
             dados = dados.loc[:, ~dados.columns.str.contains("^Unnamed")]  # Elimina colunas tipo "Unnamed"
@@ -54,8 +57,8 @@ if ficheiros_excel:
 
         st.plotly_chart(grafico, use_container_width=True)
 
-
-        col3, col4 = st.columns(2)# Botões de exportação
+        # Botões de exportação
+        col3, col4 = st.columns(2)
 
         with col3:
             if st.button("📥 Exportar Gráfico como PNG"):
@@ -79,7 +82,8 @@ if ficheiros_excel:
                     mime="application/pdf"
                 )
 
-        st.markdown("## 🧠 Gráficos Gerados Automaticamente")# Secção de vários gráficos automáticos
+        # Secção de vários gráficos automáticos
+        st.markdown("## 🧠 Gráficos Gerados Automaticamente")
 
         tipos_graficos = st.multiselect(
             "Seleciona os tipos de gráficos que queres gerar automaticamente:",
@@ -92,19 +96,22 @@ if ficheiros_excel:
         if not colunas_numericas or not colunas_texto:
             st.warning("É necessário ter pelo menos uma coluna de texto e uma coluna numérica.")
         else:
-            coluna_x_auto = colunas_texto[0]
+            # 🆕 Seletor de colunas para os gráficos automáticos
+            coluna_x_auto = st.selectbox("🧩 Coluna de Texto (X ou Nomes)", colunas_texto)
+            coluna_y_auto = st.selectbox("🎯 Coluna Numérica (Y ou Valores)", colunas_numericas)
+
             if tipos_graficos:  # Só desenha se o utilizador escolher pelo menos um tipo, para nao aparecer erro
                 colunas_layout = st.columns(len(tipos_graficos))
                 for i, tipo in enumerate(tipos_graficos):
                     with colunas_layout[i]:
                         st.markdown(f"**Gráfico de {tipo}**")
                         if tipo == "Barras":
-                            fig = px.bar(df_final, x=coluna_x_auto, y=colunas_numericas[0])
+                            fig = px.bar(df_final, x=coluna_x_auto, y=coluna_y_auto)
                         elif tipo == "Linhas":
-                            df_agrupado = df_final.groupby(coluna_x_auto, as_index=False)[colunas_numericas[0]].sum()
-                            fig = px.line(df_agrupado, x=coluna_x_auto, y=colunas_numericas[0])
+                            df_agrupado = df_final.groupby(coluna_x_auto, as_index=False)[coluna_y_auto].sum()
+                            fig = px.line(df_agrupado, x=coluna_x_auto, y=coluna_y_auto)
                         elif tipo == "Pizza":
-                            fig = px.pie(df_final, names=coluna_x_auto, values=colunas_numericas[0])
+                            fig = px.pie(df_final, names=coluna_x_auto, values=coluna_y_auto)
                         st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("Não foram encontrados dados nas folhas selecionadas.")
