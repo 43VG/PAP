@@ -1,28 +1,26 @@
-import streamlit as st          # Cria o site interativo
-import pandas as pd             # Lê e trabalha com ficheiros Excel
-import plotly.express as px     # Cria gráficos interativos
+import streamlit as st          # Criar site
+import pandas as pd             # Ficheiros Excel
+import plotly.express as px     # Gráficos interativos
 import plotly.io as pio         # Exporta imagens
-import io                       # Cria ficheiros na memória
+import io                       # Ficheiros na memória
 
-st.set_page_config(page_title="Visualizador de Excel", layout="wide")
+st.set_page_config(page_title="Visualizador de Excel", layout="wide") #Título
 
-# Título do site
 st.markdown("""
-    <h1 style='text-align: center; color: #3366cc;'>📊 Visualizador de Gráficos a partir de Excel</h1>
+    <h1 style='text-align: center; color: #3366cc;'> Visualizador de Gráficos a partir de Excel</h1>
 """, unsafe_allow_html=True)
 
-# Upload múltiplo de ficheiros Excel
-with st.expander("📁 Carrega os teus ficheiros Excel"):
-    ficheiros_excel = st.file_uploader("Seleciona um ou mais ficheiros", type=["xlsx"], accept_multiple_files=True)
+with st.expander("Carregue os ficheiros Excel"):
+    ficheiros_excel = st.file_uploader("Seleciona um ou mais ficheiros", type=["xlsx"], accept_multiple_files=True) #Carregar ficheiros
 
 if ficheiros_excel:
     todos_dfs = []
 
     for ficheiro in ficheiros_excel:
         folhas = pd.ExcelFile(ficheiro).sheet_names
-        folhas_escolhidas = st.multiselect(f"📄 Folhas de: {ficheiro.name}", folhas, default=folhas[:1])
+        folhas_escolhidas = st.multiselect(f" Folhas de: {ficheiro.name}", folhas, default=folhas[:1]) #Várias folhas
 
-        for folha in folhas_escolhidas:
+        for folha in folhas_escolhidas: #Ler ficheiros corretamente
             dados = pd.read_excel(ficheiro, sheet_name=folha, header=None)
             primeira_linha_valida = dados.dropna(how='all').index.min()
             dados = pd.read_excel(ficheiro, sheet_name=folha, skiprows=primeira_linha_valida)
@@ -33,27 +31,29 @@ if ficheiros_excel:
 
     if todos_dfs:
         df_final = pd.concat(todos_dfs, ignore_index=True)
-        with st.expander("📋 Pré-visualização dos dados"):
+        with st.expander(" Pré-visualização dos dados"): #Preview
             st.dataframe(df_final)
 
-        # Gráficos automáticos
-        st.markdown("## 🧠 Gráficos Gerados Automaticamente")
+        st.markdown("## Gráficos Gerados Automaticamente")
 
         tipos_graficos = st.multiselect(
             "Seleciona os tipos de gráficos que queres gerar automaticamente:",
-            ["Barras", "Linhas", "Pizza"]
+            ["Barras", "Linhas", "Pizza"] #Selecionar gráficos
         )
 
-        colunas_numericas = df_final.select_dtypes(include='number').columns.tolist()
-        colunas_texto = df_final.select_dtypes(include='object').columns.tolist()
+        colunas_invalidas = ["Ficheiro", "Folha"]
+        df_graficos = df_final.drop(columns=[col for col in colunas_invalidas if col in df_final.columns])
+        colunas_numericas = df_graficos.select_dtypes(include='number').columns.tolist()
+        colunas_texto = df_graficos.select_dtypes(include='object').columns.tolist()
+
 
         if not colunas_numericas or not colunas_texto:
             st.warning("É necessário ter pelo menos uma coluna de texto e uma coluna numérica.")
         else:
-            coluna_x_auto = st.selectbox("🧩 Coluna de Texto (X ou Nomes)", colunas_texto)
-            coluna_y_auto = st.selectbox("🎯 Coluna Numérica (Y ou Valores)", colunas_numericas)
+            coluna_x_auto = st.selectbox("Coluna de Texto (X ou Nomes)", colunas_texto)
+            coluna_y_auto = st.selectbox("Coluna Numérica (Y ou Valores)", colunas_numericas)
 
-            if tipos_graficos:
+            if tipos_graficos: #Gerar gráfico
                 colunas_layout = st.columns(len(tipos_graficos))
                 for i, tipo in enumerate(tipos_graficos):
                     with colunas_layout[i]:
@@ -67,7 +67,7 @@ if ficheiros_excel:
                             fig = px.pie(df_final, names=coluna_x_auto, values=coluna_y_auto)
                         st.plotly_chart(fig, use_container_width=True)
 
-                        # Exportação
+                        # Exportar
                         col3, col4 = st.columns(2)
                         with col3:
                             if st.button(f"📥 Exportar {tipo} como PNG", key=f"{tipo}_png"):
