@@ -1,9 +1,8 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, Blueprint
 from app import db, bcrypt
 from flask_login import login_user, logout_user, login_required, current_user
 from app.forms import LoginForm, CriarContaForm
 from app.models import Utilizador
-from flask import Blueprint
 
 rotas = Blueprint('rotas', __name__)
 
@@ -11,13 +10,13 @@ rotas = Blueprint('rotas', __name__)
 @rotas.route("/", methods=["GET", "POST"])
 def homepage():
     if current_user.is_authenticated:
-        return redirect(url_for("rotas.dashboard"))  # Redirecionar para o dashboard se já estiver logado
+        return redirect(url_for("rotas.dashboard"))  
     formLog = LoginForm()
     if formLog.validate_on_submit():
         utilizador = Utilizador.query.filter_by(email=formLog.email.data).first()
         if utilizador and bcrypt.check_password_hash(utilizador.senha, formLog.senha.data):
             login_user(utilizador)
-            return redirect(url_for("rotas.dashboard"))  # Redireciona para o dashboard após login
+            return redirect(url_for("rotas.dashboard"))  
         else:
             flash("Login inválido.", "danger")
     return render_template("homepage.html", formLog=formLog)
@@ -26,13 +25,12 @@ def homepage():
 @rotas.route("/criarconta", methods=["GET", "POST"])
 def criarconta():
     form = CriarContaForm()
-    if form.validate_on_submit():  #
+    if form.validate_on_submit():  
         senha_hash = bcrypt.generate_password_hash(form.senha.data).decode('utf-8')
         novo_utilizador = Utilizador(nome=form.nome.data, email=form.email.data, senha=senha_hash)
         db.session.add(novo_utilizador)
         db.session.commit()
-        flash("Conta criada com sucesso! Já pode fazer login.", "success")
-        return redirect(url_for("rotas.login"))  
+        return redirect(url_for('rotas.login'))
     return render_template("criarconta.html", formLog=form)  
 
 
