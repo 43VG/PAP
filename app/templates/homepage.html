@@ -25,19 +25,7 @@
 
         <div class="content">
             {% block content %}
-            <h2>Login</h2>
-            <form method="POST">
-                {{ formLog.hidden_tag() }}
-                <div>
-                    {{ formLog.email.label }} {{ formLog.email() }}
-                </div>
-                <div>
-                    {{ formLog.senha.label }} {{ formLog.senha() }}
-                </div>
-                <div>
-                    {{ formLog.botao_confirm() }}
-                </div>
-            </form>
+            <!-- para futuras paginas -->
             {% endblock %}
         </div>
     </div>
