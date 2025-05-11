@@ -11,7 +11,7 @@ login_manager.login_view = "rotas.homepage"
 login_manager.login_message_category = "info"
 
 def criar_app():
-    print("Iniciando a criação da app...")
+    print("A criar app...")
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "chave_super_secreta_123"
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///basedados.db"
