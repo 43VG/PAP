@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block titulo %}Página Inicial{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Bem-vindo ao Sistema</h1>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('rotas.homepage') }}">Início</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('rotas.logout') }}">Sair</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('rotas.criarconta') }}">Criar Conta</a></li>
+                    <li><a href="{{ url_for('rotas.login') }}">Entrar</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        <div class="content">
+            {% block content %}
+            <h2>Login</h2>
+            <form method="POST">
+                {{ formLog.hidden_tag() }}
+                <div>
+                    {{ formLog.email.label }} {{ formLog.email() }}
+                </div>
+                <div>
+                    {{ formLog.senha.label }} {{ formLog.senha() }}
+                </div>
+                <div>
+                    {{ formLog.botao_confirm() }}
+                </div>
+            </form>
+            {% endblock %}
+        </div>
+    </div>
+</body>
+</html>

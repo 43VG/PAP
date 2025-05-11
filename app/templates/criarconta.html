@@ -1,0 +1,40 @@
+{% extends "homepage.html" %}
+
+{% block content %}
+<h2>Criar Conta</h2>
+<form method="POST">
+    {{ formLog.hidden_tag() }}
+    
+    <div>
+        {{ formLog.nome.label }} {{ formLog.nome() }}
+        {% for error in formLog.nome.errors %}
+            <span style="color:red">{{ error }}</span>
+        {% endfor %}
+    </div>
+
+    <div>
+        {{ formLog.email.label }} {{ formLog.email() }}
+        {% for error in formLog.email.errors %}
+            <span style="color:red">{{ error }}</span>
+        {% endfor %}
+    </div>
+
+    <div>
+        {{ formLog.senha.label }} {{ formLog.senha() }}
+        {% for error in formLog.senha.errors %}
+            <span style="color:red">{{ error }}</span>
+        {% endfor %}
+    </div>
+
+    <div>
+        {{ formLog.senha_confirmacao.label }} {{ formLog.senha_confirmacao() }}
+        {% for error in formLog.senha_confirmacao.errors %}
+            <span style="color:red">{{ error }}</span>
+        {% endfor %}
+    </div>
+
+    <div>
+        {{ formLog.botao_confirm() }}
+    </div>
+</form>
+{% endblock %}

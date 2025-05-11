@@ -1,0 +1,8 @@
+{% extends "homepage.html" %}
+
+{% block content %}
+    <div class="container">
+        <h1>Bem-vindo ao Dashboard, {{ current_user.nome }}!</h1>
+        <p>Esta página é acessível apenas para utilizadores autenticados.</p>
+    </div>
+{% endblock %}
