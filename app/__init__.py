@@ -1,27 +1,27 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager
+from flask import Flask  #Flask para criar a aplicação web
+from flask_sqlalchemy import SQLAlchemy  #SQLAlchemy para gerir a base de dados
+from flask_bcrypt import Bcrypt  #Bcrypt para encriptar senhas
+from flask_login import LoginManager  #Importa LoginManager para gerir sessões de utilizadores (login/logout)
 
+db = SQLAlchemy()  #Objeto da base de dados
+bcrypt = Bcrypt()  #Objeto para encriptação de senhas
+login_manager = LoginManager()  #Gestor de sessões de utilizadores
+login_manager.login_view = "rotas.homepage"  #Define a página para onde o utilizador será redirecionado se não estiver autenticado
+login_manager.login_message_category = "info"  #Define o estilo da mensagem flash que aparece quando o login é exigido
 
-db = SQLAlchemy()
-bcrypt = Bcrypt()
-login_manager = LoginManager()
-login_manager.login_view = "rotas.homepage"
-login_manager.login_message_category = "info"
+def criar_app():  #Função que cria e configura a aplicação Flask
+    print("A criar app...")  #Mensagem de debug no terminal
 
-def criar_app():
-    print("A criar app...")
-    app = Flask(__name__)
-    app.config["SECRET_KEY"] = "chave_super_secreta_123"
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///basedados.db"
+    app = Flask(__name__)  #Cria a instância principal da aplicação
+    app.config["SECRET_KEY"] = "97G8MSGSIUDFHA68S"  #Define a chave secreta (usada para sessões e segurança)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///basedados.db"  #Define o caminho da base de dados SQLite
 
-    db.init_app(app)
-    bcrypt.init_app(app)
-    login_manager.init_app(app)
+    db.init_app(app)  #Liga o SQLAlchemy à aplicação Flask
+    bcrypt.init_app(app)  #Liga o Bcrypt à aplicação Flask
+    login_manager.init_app(app)  #Liga o LoginManager à aplicação Flask
 
-    from app.routes import rotas
-    app.register_blueprint(rotas)
+    from app.routes import rotas  #Importa as rotas definidas no ficheiro routes.py
+    app.register_blueprint(rotas)  #Blueprint regista rotas 
 
-    print("App criada com sucesso!")
-    return app
+    print("App criada com sucesso!")  #Mensagem de sucesso no terminal
+    return app  #Devolve a aplicação pronta a ser usada
