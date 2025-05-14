@@ -1,40 +1,42 @@
-{% extends "homepage.html" %}
+{% extends "homepage.html" %}  <!-- Esta página herda a disposição definida no ficheiro homepage.html -->
 
-{% block content %}
+{% block content %}  <!-- Início do conteúdo personalizado -->
+
 <h2>Criar Conta</h2>
-<form method="POST">
-    {{ formLog.hidden_tag() }}
-    
+<form method="POST">  <!-- Formulário que envia os dados com POST -->
+    {{ formLog.hidden_tag() }}  <!-- Proteção contra CSRF -->
+
     <div>
-        {{ formLog.nome.label }} {{ formLog.nome() }}
-        {% for error in formLog.nome.errors %}
-            <span style="color:red">{{ error }}</span>
+        {{ formLog.nome.label }} {{ formLog.nome() }}  <!-- Campo nome -->
+        {% for error in formLog.nome.errors %}  <!-- Mostrar erro do nome -->
+            <span style="color:red">{{ error }}</span>  <!-- Texto do erro -->
         {% endfor %}
     </div>
 
     <div>
-        {{ formLog.email.label }} {{ formLog.email() }}
-        {% for error in formLog.email.errors %}
-            <span style="color:red">{{ error }}</span>
+        {{ formLog.email.label }} {{ formLog.email() }}  <!-- Campo email -->
+        {% for error in formLog.email.errors %}  <!-- Mostrar erro do email -->
+            <span style="color:red">{{ error }}</span>  <!-- Texto do erro -->
         {% endfor %}
     </div>
 
     <div>
-        {{ formLog.senha.label }} {{ formLog.senha() }}
-        {% for error in formLog.senha.errors %}
-            <span style="color:red">{{ error }}</span>
+        {{ formLog.senha.label }} {{ formLog.senha() }}  <!-- Campo senha -->
+        {% for error in formLog.senha.errors %}  <!-- Mostrar erro da senha -->
+            <span style="color:red">{{ error }}</span>  <!-- Texto do erro -->
         {% endfor %}
     </div>
 
     <div>
-        {{ formLog.senha_confirmacao.label }} {{ formLog.senha_confirmacao() }}
-        {% for error in formLog.senha_confirmacao.errors %}
-            <span style="color:red">{{ error }}</span>
+        {{ formLog.senha_confirmacao.label }} {{ formLog.senha_confirmacao() }}  <!-- Confirmar senha -->
+        {% for error in formLog.senha_confirmacao.errors %}  <!-- Mostrar erro da confirmação -->
+            <span style="color:red">{{ error }}</span>  <!-- Texto do erro -->
         {% endfor %}
     </div>
 
     <div>
-        {{ formLog.botao_confirm() }}
+        {{ formLog.botao_confirm() }}  <!-- Botão "Criar Conta" -->
     </div>
 </form>
-{% endblock %}
+
+{% endblock %}  <!-- Fim do conteúdo personalizado -->
