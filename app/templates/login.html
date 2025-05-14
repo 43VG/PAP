@@ -1,14 +1,15 @@
-{% extends "homepage.html" %}
+{% extends "homepage.html" %}  <!-- Esta página herda a disposição definida no ficheiro homepage.html -->
+{% block titulo %}Login{% endblock %}  <!-- Título do separador -->
 
-{% block titulo %}Login{% endblock %}
+{% block content %}  <!-- Início do conteúdo específico desta página -->
+<h2>Login</h2>  <!-- Título da página -->
 
-{% block content %}
-<h2>Login</h2>
-<form method="POST">
-    {{ formLog.hidden_tag() }}
-    {{ formLog.email.label }} {{ formLog.email() }}<br>
-    {{ formLog.senha.label }} {{ formLog.senha() }}<br>
-    {{ formLog.botao_confirm() }}
+<form method="POST">  <!-- Formulário que envia os dados por método POST -->
+    {{ formLog.hidden_tag() }}  <!-- Proteção contra CSRF (campo oculto) -->
+    {{ formLog.email.label }} {{ formLog.email() }}<br>  <!-- Campo de email com etiqueta -->
+    {{ formLog.senha.label }} {{ formLog.senha() }}<br>  <!-- Campo de senha com etiqueta -->
+    {{ formLog.botao_confirm() }}  <!-- Botão "Entrar" -->
 </form>
-<p><a href="{{ url_for('rotas.criarconta') }}">Ainda não tem conta?</a></p>
-{% endblock %}
+
+<p><a href="{{ url_for('rotas.criarconta') }}">Ainda não tem conta?</a></p>  <!-- Link para criar conta -->
+{% endblock %}  <!-- Fim do conteúdo específico -->
