@@ -1,14 +1,60 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
+body {                     /* Estilo geral do corpo da página */
+    font-family: Arial, sans-serif;  /* Fonte principal */
+    background-color: #f0f0f0;       /* Cor de fundo */
+    margin: 0;                       /* Margem */
+    padding: 0;                      /* Espaçamento */
 }
 
-h1 {
-    color: #333;
+.container {              /* Caixa principal que envolve o conteúdo */
+    width: 80%;                     /* Largura */
+    margin: auto;                   /* Margem */
+    background-color: #fff;         /* Fundo */
+    padding: 20px;                  /* Espaçamento  */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Sombra */
+    border-radius: 8px;             /* Cantos */
 }
 
-form {
-    margin-top: 20px;
+header {                  /* Cabeçalho */
+    text-align: center;            /* Texto centralizado */
+    padding: 10px 0;               /* Espaçamento */
+    background-color: #007BFF;     /* Cor de fundo */
+    color: white;                  /* Cor do texto */
+    border-radius: 8px 8px 0 0;    /* Cantos */
+}
+
+nav ul {                  /* Lista de navegação */
+    list-style: none;             /* Remove os marcadores da lista */
+    padding: 0;                   /* Preenchimento */
+    display: flex;                /* Deixa os itens na horizontal */
+    justify-content: center;     /* Centralizar */
+    background-color: #e0e0e0;    /* Cor de fundo */
+    margin: 0;                    /* Margem */
+}
+
+nav ul li {               /* Cada item da navegação */
+    margin: 0 10px;               /* Margem */
+}
+
+nav ul li a {             /* Links da navegação */
+    text-decoration: none;        /* Sublinhado */
+    color: #333;                  /* Cor do texto */
+    padding: 10px 15px;           /* Espaçamento */
+    display: block;               /* Torna o link clicável */
+}
+
+nav ul li a:hover {       /* Efeito ao passar o rato */
+    background-color: #ccc;       /* Cor de fundo */
+    border-radius: 4px;           /* Cantos */
+}
+
+h1, h2 {                  /* Títulos principais */
+    color: #333;                  /* Cor do texto */
+}
+
+form {                    /* Formulários */
+    margin-top: 20px;             /* Margem */
+}
+
+form div {                /* Cada campo do formulário */
+    margin-bottom: 15px;          /* Margem */
 }
