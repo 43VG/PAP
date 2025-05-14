@@ -1,8 +1,8 @@
-{% extends "homepage.html" %}
+{% extends "homepage.html" %}  <!--Esta página herda a disposição definida no ficheiro homepage.html -->
 
-{% block content %}
-    <div class="container">
-        <h1>Bem-vindo ao Dashboard, {{ current_user.nome }}!</h1>
-        <p>Esta página é acessível apenas para utilizadores autenticados.</p>
+{% block content %}  <!-- Bloco de que será inserido no bloco "content" no homepage.html -->
+    <div class="container">  <!-- Div para agrupar e aplicar estilo ao conteúdo específico do dashboard -->
+        <h1>Bem-vindo ao Dashboard, {{ current_user.nome }}!</h1>  <!-- Mostra o nome do utilizador autenticado usando current_user.nome -->
+        <p>Esta página é acessível apenas para utilizadores autenticados.</p>  <!-- Mensagem para ajudar na depuração -->
     </div>
-{% endblock %}
+{% endblock %}  
