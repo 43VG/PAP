@@ -1,8 +1,33 @@
-{% extends "homepage.html" %}  <!--Esta página herda a disposição definida no ficheiro homepage.html -->
+{% extends "homepage.html" %}
+{% block content %}
+<div class="container">
+    <h1>Bem-vindo ao Dashboard, {{ current_user.nome }}!</h1>
 
-{% block content %}  <!-- Bloco de que será inserido no bloco "content" no homepage.html -->
-    <div class="container">  <!-- Div para agrupar e aplicar estilo ao conteúdo específico do dashboard -->
-        <h1>Bem-vindo ao Dashboard, {{ current_user.nome }}!</h1>  <!-- Mostra o nome do utilizador autenticado usando current_user.nome -->
-        <p>Esta página é acessível apenas para utilizadores autenticados.</p>  <!-- Mensagem para ajudar na depuração -->
-    </div>
-{% endblock %}  
+    <!-- Upload de ficheiros Excel -->
+    <form action="{{ url_for('rotas.upload_excel') }}" method="post" enctype="multipart/form-data">
+        <label for="ficheiros">Seleciona ficheiros Excel:</label><br>
+        <input type="file" name="ficheiros" multiple required><br><br>
+        <button type="submit">Carregar ficheiros</button>
+    </form>
+
+    {% if folhas_por_ficheiro %}
+        <hr>
+        <form action="{{ url_for('selecionar_folhas') }}" method="post">
+            <h3>Seleciona as folhas que queres usar:</h3>
+            {% for nome, folhas in folhas_por_ficheiro.items() %}
+                <strong>{{ nome }}</strong><br>
+                {% for folha in folhas %}
+                    <input type="checkbox" name="selecionadas_{{ nome }}" value="{{ folha }}" checked>
+                    {{ folha }}<br>
+                {% endfor %}
+                <br>
+            {% endfor %}
+            <!-- Guardar nomes dos ficheiros no form -->
+            {% for nome in folhas_por_ficheiro %}
+                <input type="hidden" name="ficheiros_nome" value="{{ nome }}">
+            {% endfor %}
+            <button type="submit">Confirmar folhas</button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

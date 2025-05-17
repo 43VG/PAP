@@ -3,6 +3,10 @@ from app import db, bcrypt #Importa a base de dados e o sistema de encriptação
 from flask_login import login_user, logout_user, login_required, current_user #Importa funções de login, logout, proteção de rotas e acesso ao utilizador atual
 from app.forms import LoginForm, CriarContaForm #Importa os formulários criados para login e criação de conta
 from app.models import Utilizador #Importa o modelo de utilizador (estrutura da base de dados)
+import pandas as pd
+import plotly.express as px
+import base64
+import io
 
 rotas = Blueprint('rotas', __name__) #Cria um conjunto de rotas com o nome "rotas" (Blueprint permite organizar as páginas)
 
@@ -61,3 +65,35 @@ def logout(): #Página para fazer logout (só acessível se estiver logado)
 @login_required  
 def dashboard():#Página principal protegida do utilizador
     return render_template("dashboard.html")  #Mostra o dashboard
+
+@rotas.route("/upload", methods=["POST"])
+@login_required
+def upload_excel():
+    ficheiros = request.files.getlist("ficheiros_excel")  # Lê os ficheiros enviados
+    graficos = []  # Lista para guardar os gráficos gerados
+
+    for ficheiro in ficheiros:
+        try:
+            # Lê todas as folhas do ficheiro Excel como dicionário
+            folhas = pd.read_excel(ficheiro, sheet_name=None)
+
+            for nome_folha, df in folhas.items():
+                df = df.dropna(how='all')  # Remove linhas completamente vazias
+
+                # Deteta colunas numéricas automaticamente
+                colunas_numericas = df.select_dtypes(include=['number']).columns
+                if len(colunas_numericas) == 0:
+                    continue
+
+                for col in colunas_numericas:
+                    fig = px.bar(df, y=col, title=f"{ficheiro.filename} - {nome_folha} - {col}")
+                    buffer = io.BytesIO()
+                    fig.write_image(buffer, format="png")
+                    buffer.seek(0)
+                    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+                    graficos.append(imagem_base64)
+
+        except Exception as e:
+            flash(f"Erro ao processar {ficheiro.filename}: {str(e)}", "danger")
+
+    return render_template("dashboard.html", graficos=graficos)
