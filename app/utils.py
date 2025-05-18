@@ -1,4 +1,6 @@
 import pandas as pd  #Para manipulação de dados em tabelas
+import os 
+
 
 def obter_folhas_excel(ficheiro):
     """Devolve os nomes das folhas do Excel"""
@@ -18,7 +20,7 @@ def ler_folhas_selecionadas(ficheiro, folhas_escolhidas):
             dados = pd.read_excel(ficheiro, sheet_name=folha, header=None) #Lê a folha sem assumir cabeçalho, para encontrar onde começam os dados
             primeira_linha_valida = dados.dropna(how='all').index.min() #Identifica a primeira linha com conteúdo (ignora linhas totalmente vazias)
             dados = pd.read_excel(ficheiro, sheet_name=folha, skiprows=primeira_linha_valida) #Lê novamente a folha, agora a partir da linha com dados reais
-            dados["Ficheiro"] = getattr(ficheiro, 'filename', 'desconhecido.xlsx') #Adiciona colunas com o nome do ficheiro e da folha 
+            dados["Ficheiro"] = os.path.basename(ficheiro)  #Guarda o nome do ficheiro a partir do caminho
             dados["Folha"] = folha
             dados = dados.loc[:, ~dados.columns.str.contains("^Unnamed")] #Remove colunas automáticas sem nome (geradas pelo Excel)
             todos_dfs.append(dados) #Guarda o DataFrame na lista
