@@ -7,6 +7,10 @@ import pandas as pd
 import plotly.express as px
 import base64
 import io
+import os 
+from .utils import obter_folhas_excel
+from werkzeug.utils import secure_filename
+
 
 rotas = Blueprint('rotas', __name__) #Cria um conjunto de rotas com o nome "rotas" (Blueprint permite organizar as páginas)
 
@@ -66,34 +70,33 @@ def logout(): #Página para fazer logout (só acessível se estiver logado)
 def dashboard():#Página principal protegida do utilizador
     return render_template("dashboard.html")  #Mostra o dashboard
 
-@rotas.route("/upload", methods=["POST"])
+# Pasta temporária onde os ficheiros vão ser guardados
+UPLOAD_FOLDER = "ficheiros_recebidos"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@rotas.route("/upload_excel", methods=["POST"])
 @login_required
 def upload_excel():
-    ficheiros = request.files.getlist("ficheiros_excel")  # Lê os ficheiros enviados
-    graficos = []  # Lista para guardar os gráficos gerados
+    folhas_por_ficheiro = {}
+    ficheiros_recebidos = request.files.getlist("ficheiros")
 
-    for ficheiro in ficheiros:
-        try:
-            # Lê todas as folhas do ficheiro Excel como dicionário
-            folhas = pd.read_excel(ficheiro, sheet_name=None)
+    if not ficheiros_recebidos:
+        flash("Nenhum ficheiro foi enviado.", "danger")
+        return redirect(url_for("rotas.dashboard"))
 
-            for nome_folha, df in folhas.items():
-                df = df.dropna(how='all')  # Remove linhas completamente vazias
+    for ficheiro in ficheiros_recebidos:
+        if ficheiro.filename.endswith(".xlsx"):
+            nome_seguro = secure_filename(ficheiro.filename)
+            caminho = os.path.join(UPLOAD_FOLDER, nome_seguro)
+            ficheiro.save(caminho)
 
-                # Deteta colunas numéricas automaticamente
-                colunas_numericas = df.select_dtypes(include=['number']).columns
-                if len(colunas_numericas) == 0:
-                    continue
+            folhas = obter_folhas_excel(caminho)
+            folhas_por_ficheiro[nome_seguro] = folhas
 
-                for col in colunas_numericas:
-                    fig = px.bar(df, y=col, title=f"{ficheiro.filename} - {nome_folha} - {col}")
-                    buffer = io.BytesIO()
-                    fig.write_image(buffer, format="png")
-                    buffer.seek(0)
-                    imagem_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-                    graficos.append(imagem_base64)
+    return render_template("dashboard.html", folhas_por_ficheiro=folhas_por_ficheiro)
 
-        except Exception as e:
-            flash(f"Erro ao processar {ficheiro.filename}: {str(e)}", "danger")
-
-    return render_template("dashboard.html", graficos=graficos)
+@rotas.route("/selecionar_folhas", methods=["POST"])
+@login_required
+def selecionar_folhas():
+    # Aqui vais tratar os dados enviados pelo formulário
+    return "Folhas recebidas!"

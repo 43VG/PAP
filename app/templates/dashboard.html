@@ -12,7 +12,7 @@
 
     {% if folhas_por_ficheiro %}
         <hr>
-        <form action="{{ url_for('selecionar_folhas') }}" method="post">
+        <form action="{{ url_for('rotas.selecionar_folhas') }}" method="post">
             <h3>Seleciona as folhas que queres usar:</h3>
             {% for nome, folhas in folhas_por_ficheiro.items() %}
                 <strong>{{ nome }}</strong><br>
