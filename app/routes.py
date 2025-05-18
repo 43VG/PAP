@@ -3,7 +3,7 @@ from app import db, bcrypt #Importa a base de dados e o sistema de encriptação
 from flask_login import login_user, logout_user, login_required, current_user #Importa funções de login, logout, proteção de rotas e acesso ao utilizador atual
 from app.forms import LoginForm, CriarContaForm #Importa os formulários criados para login e criação de conta
 from app.models import Utilizador #Importa o modelo de utilizador (estrutura da base de dados)
-import pandas as pd #Importa pandas ara manipulação de dados em tabelas
+import pandas as pd #Importa pandas para manipulação de dados em tabelas
 import plotly.express as px #Importa plotly para criação de gráficos 
 import base64 #Permite codificar imagens em base64 para exportar
 import io #Biblioteca para trabalhar com ficheiros em memória
