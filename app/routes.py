@@ -8,7 +8,7 @@ import plotly.express as px #Importa plotly para criação de gráficos
 import base64 #Permite codificar imagens em base64 para exportar
 import io #Biblioteca para trabalhar com ficheiros em memória
 import os #Importa o módulo OS para interagir com o sistema de ficheiros (guardar uploads, criar pastas)
-from .utils import obter_folhas_excel, ler_folhas_selecionadas #Importa função personalizada que extrai os nomes das folhas de um ficheiro Excel
+from .utils import obter_folhas_excel, ler_folhas_selecionadas #Importa funções que extraiem e leem os nomes das folhas de um ficheiro Excel
 from werkzeug.utils import secure_filename #Função que limpa nomes de ficheiros (evita erros de segurança ao guardar ficheiros no disco)
 
 
@@ -95,30 +95,31 @@ def upload_excel():
 
     return render_template("dashboard.html", folhas_por_ficheiro=folhas_por_ficheiro)  #Mostra a seleção de folhas no dashboard
 
-from flask import session
-from .utils import ler_folhas_selecionadas
-
 @rotas.route("/selecionar_folhas", methods=["POST"])
 @login_required
 def selecionar_folhas():
-    ficheiros_nomes = request.form.getlist("ficheiros_nome")
-    dados_finais = []
+    ficheiros_nomes = request.form.getlist("ficheiros_nome")  #Recebe nomes dos ficheiros enviados no form
+    dados_finais = []  #Lista para juntar os DataFrames lidos
 
     for nome in ficheiros_nomes:
-        folhas_escolhidas = request.form.getlist(f"selecionadas_{nome}")
-        caminho = os.path.join(UPLOAD_FOLDER, secure_filename(nome))
+        folhas_escolhidas = request.form.getlist(f"selecionadas_{nome}")  #Folhas selecionadas pelo utilizador
+        caminho = os.path.join(UPLOAD_FOLDER, secure_filename(nome))  #Caminho completo do ficheiro guardado
 
         if folhas_escolhidas:
-            df = ler_folhas_selecionadas(caminho, folhas_escolhidas)
+            df = ler_folhas_selecionadas(caminho, folhas_escolhidas)  #Lê só as folhas escolhidas do ficheiro
             if df is not None:
-                dados_finais.append(df)
+                dados_finais.append(df)  #Adiciona os dados lidos à lista final            
+        else:
+            flash("Nenhuma folha foi selecionada.", "warning")  #Caso não haja folhas selecionadas, dá erro
+            return redirect(url_for("rotas.dashboard"))
 
+    #Depois de processar todos os ficheiros e folhas selecionadas:
     if dados_finais:
-        df_total = pd.concat(dados_finais, ignore_index=True)
-        session['dados_excel'] = df_total.to_json(orient='records')  # Guardar na sessão como JSON
-        flash("Dados recebidos com sucesso!", "success")
+        df_total = pd.concat(dados_finais, ignore_index=True)  #Junta todos os dados num só DataFrame
+        session['dados_excel'] = df_total.to_json(orient='records')  #Guarda o DataFrame como JSON na sessão
+        tabela_preview = df_total.to_html(classes='table table-striped', index=False)  #Gera a tabela HTML com todos os dados
+        flash("Dados recebidos com sucesso!", "success")  #Mensagem de sucesso
+        return render_template("dashboard.html", folhas_por_ficheiro=None, preview_html=tabela_preview)  #Envia a tabela para o dashboard (sem reescolher ficheiros)
     else:
-        flash("Erro ao ler os dados selecionados.", "danger")
-
-    return redirect(url_for("rotas.dashboard"))
-
+        flash("Erro ao ler os dados selecionados.", "danger")  #Mensagem de erro se não foi possível ler nada
+        return redirect(url_for("rotas.dashboard"))  #Redireciona de volta ao dashboard
