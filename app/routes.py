@@ -3,13 +3,13 @@ from app import db, bcrypt #Importa a base de dados e o sistema de encriptação
 from flask_login import login_user, logout_user, login_required, current_user #Importa funções de login, logout, proteção de rotas e acesso ao utilizador atual
 from app.forms import LoginForm, CriarContaForm #Importa os formulários criados para login e criação de conta
 from app.models import Utilizador #Importa o modelo de utilizador (estrutura da base de dados)
-import pandas as pd
-import plotly.express as px
-import base64
-import io
-import os 
-from .utils import obter_folhas_excel
-from werkzeug.utils import secure_filename
+import pandas as pd #Importa pandas ara manipulação de dados em tabelas
+import plotly.express as px #Importa plotly para criação de gráficos 
+import base64 #Permite codificar imagens em base64 para exportar
+import io #Biblioteca para trabalhar com ficheiros em memória
+import os #Importa o módulo OS para interagir com o sistema de ficheiros (guardar uploads, criar pastas)
+from .utils import obter_folhas_excel #Importa função personalizada que extrai os nomes das folhas de um ficheiro Excel
+from werkzeug.utils import secure_filename #Função que limpa nomes de ficheiros (evita erros de segurança ao guardar ficheiros no disco)
 
 
 rotas = Blueprint('rotas', __name__) #Cria um conjunto de rotas com o nome "rotas" (Blueprint permite organizar as páginas)
@@ -70,33 +70,33 @@ def logout(): #Página para fazer logout (só acessível se estiver logado)
 def dashboard():#Página principal protegida do utilizador
     return render_template("dashboard.html")  #Mostra o dashboard
 
-# Pasta temporária onde os ficheiros vão ser guardados
-UPLOAD_FOLDER = "ficheiros_recebidos"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+UPLOAD_FOLDER = "ficheiros_recebidos" #Pasta temporária onde os ficheiros vão ser guardados
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  #Garante que a pasta existe; se não existir, é criada
 
 @rotas.route("/upload_excel", methods=["POST"])
 @login_required
 def upload_excel():
-    folhas_por_ficheiro = {}
-    ficheiros_recebidos = request.files.getlist("ficheiros")
+    folhas_por_ficheiro = {}  #Dicionário que vai guardar as folhas de cada ficheiro
+    ficheiros_recebidos = request.files.getlist("ficheiros")  #Recebe a lista de ficheiros enviados pelo formulário
 
     if not ficheiros_recebidos:
-        flash("Nenhum ficheiro foi enviado.", "danger")
-        return redirect(url_for("rotas.dashboard"))
+        flash("Nenhum ficheiro foi enviado.", "danger")  #Mostra mensagem de erro se nenhum ficheiro for enviado
+        return redirect(url_for("rotas.dashboard"))  #Redireciona de volta ao dashboard
 
     for ficheiro in ficheiros_recebidos:
-        if ficheiro.filename.endswith(".xlsx"):
-            nome_seguro = secure_filename(ficheiro.filename)
-            caminho = os.path.join(UPLOAD_FOLDER, nome_seguro)
-            ficheiro.save(caminho)
+        if ficheiro.filename.endswith(".xlsx"): #Verificar que é ficheiro Excel
+            nome_seguro = secure_filename(ficheiro.filename)  #Limpa o nome do ficheiro para evitar erros de segurança
+            caminho = os.path.join(UPLOAD_FOLDER, nome_seguro)  #Define o caminho onde o ficheiro será guardado
+            ficheiro.save(caminho)  #Guarda o ficheiro localmente
 
-            folhas = obter_folhas_excel(caminho)
-            folhas_por_ficheiro[nome_seguro] = folhas
+            folhas = obter_folhas_excel(caminho)  #Usa função auxiliar para obter os nomes das folhas do Excel
+            folhas_por_ficheiro[nome_seguro] = folhas  #Associa as folhas ao nome do ficheiro no dicionário
 
-    return render_template("dashboard.html", folhas_por_ficheiro=folhas_por_ficheiro)
+    return render_template("dashboard.html", folhas_por_ficheiro=folhas_por_ficheiro)  #Mostra a seleção de folhas no dashboard
 
 @rotas.route("/selecionar_folhas", methods=["POST"])
 @login_required
 def selecionar_folhas():
-    # Aqui vais tratar os dados enviados pelo formulário
-    return "Folhas recebidas!"
+    #Aqui vais tratar os dados enviados pelo formulário
+    return "Folhas recebidas!"  #Mensagem temporária a confirmar a receção das folhas
