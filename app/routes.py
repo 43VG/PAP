@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request, Blueprint #Importa funções para mostrar páginas, redirecionar, mensagens e ler dados do formulário
+from flask import render_template, redirect, url_for, flash, request, Blueprint, session #Importa funções para mostrar páginas, redirecionar, mensagens e ler dados do formulário
 from app import db, bcrypt #Importa a base de dados e o sistema de encriptação de senhas
 from flask_login import login_user, logout_user, login_required, current_user #Importa funções de login, logout, proteção de rotas e acesso ao utilizador atual
 from app.forms import LoginForm, CriarContaForm #Importa os formulários criados para login e criação de conta
@@ -8,7 +8,7 @@ import plotly.express as px #Importa plotly para criação de gráficos
 import base64 #Permite codificar imagens em base64 para exportar
 import io #Biblioteca para trabalhar com ficheiros em memória
 import os #Importa o módulo OS para interagir com o sistema de ficheiros (guardar uploads, criar pastas)
-from .utils import obter_folhas_excel #Importa função personalizada que extrai os nomes das folhas de um ficheiro Excel
+from .utils import obter_folhas_excel, ler_folhas_selecionadas #Importa função personalizada que extrai os nomes das folhas de um ficheiro Excel
 from werkzeug.utils import secure_filename #Função que limpa nomes de ficheiros (evita erros de segurança ao guardar ficheiros no disco)
 
 
@@ -95,8 +95,30 @@ def upload_excel():
 
     return render_template("dashboard.html", folhas_por_ficheiro=folhas_por_ficheiro)  #Mostra a seleção de folhas no dashboard
 
+from flask import session
+from .utils import ler_folhas_selecionadas
+
 @rotas.route("/selecionar_folhas", methods=["POST"])
 @login_required
 def selecionar_folhas():
-    #Aqui vais tratar os dados enviados pelo formulário
-    return "Folhas recebidas!"  #Mensagem temporária a confirmar a receção das folhas
+    ficheiros_nomes = request.form.getlist("ficheiros_nome")
+    dados_finais = []
+
+    for nome in ficheiros_nomes:
+        folhas_escolhidas = request.form.getlist(f"selecionadas_{nome}")
+        caminho = os.path.join(UPLOAD_FOLDER, secure_filename(nome))
+
+        if folhas_escolhidas:
+            df = ler_folhas_selecionadas(caminho, folhas_escolhidas)
+            if df is not None:
+                dados_finais.append(df)
+
+    if dados_finais:
+        df_total = pd.concat(dados_finais, ignore_index=True)
+        session['dados_excel'] = df_total.to_json(orient='records')  # Guardar na sessão como JSON
+        flash("Dados recebidos com sucesso!", "success")
+    else:
+        flash("Erro ao ler os dados selecionados.", "danger")
+
+    return redirect(url_for("rotas.dashboard"))
+
