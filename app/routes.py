@@ -95,10 +95,11 @@ def upload_excel():
 
     return render_template("dashboard.html", folhas_por_ficheiro=folhas_por_ficheiro)  #Mostra a seleção de folhas no dashboard
 
+
 @rotas.route("/selecionar_folhas", methods=["POST"])
 @login_required
 def selecionar_folhas():
-    ficheiros_nomes = request.form.getlist("ficheiros_nome")  #Recebe nomes dos ficheiros enviados no form
+    ficheiros_nomes = request.form.getlist("ficheiros_nome")  #Recebe os nomes dos ficheiros do formulário
     dados_finais = []  #Lista para juntar os DataFrames lidos
 
     for nome in ficheiros_nomes:
@@ -110,16 +111,15 @@ def selecionar_folhas():
             if df is not None:
                 dados_finais.append(df)  #Adiciona os dados lidos à lista final            
         else:
-            flash("Nenhuma folha foi selecionada.", "warning")  #Caso não haja folhas selecionadas, dá erro
+            flash("Nenhuma folha foi selecionada.", "warning") #Caso não haja folhas selecionadas, dá erro
             return redirect(url_for("rotas.dashboard"))
-
-    #Depois de processar todos os ficheiros e folhas selecionadas:
+    
     if dados_finais:
         df_total = pd.concat(dados_finais, ignore_index=True)  #Junta todos os dados num só DataFrame
         session['dados_excel'] = df_total.to_json(orient='records')  #Guarda o DataFrame como JSON na sessão
-        tabela_preview = df_total.to_html(classes='table table-striped', index=False)  #Gera a tabela HTML com todos os dados
         flash("Dados recebidos com sucesso!", "success")  #Mensagem de sucesso
-        return render_template("dashboard.html", folhas_por_ficheiro=None, preview_html=tabela_preview)  #Envia a tabela para o dashboard (sem reescolher ficheiros)
+        tabela_preview = df_total.to_html(classes='table table-striped', index=False) #Gera a tabela HTML com todos os dados recebidos
+        return render_template("dashboard.html", folhas_por_ficheiro=None, preview_html=tabela_preview) #Envia a tabela para o dashboard (sem necessidade de reescolher ficheiros)
     else:
         flash("Erro ao ler os dados selecionados.", "danger")  #Mensagem de erro se não foi possível ler nada
         return redirect(url_for("rotas.dashboard"))  #Redireciona de volta ao dashboard
