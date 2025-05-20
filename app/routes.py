@@ -119,7 +119,7 @@ def selecionar_folhas():
         session['dados_excel'] = df_total.to_json(orient='records')
         flash("Dados recebidos com sucesso!", "success")
         
-        # Identificar colunas numéricas e de texto
+        #Identificar colunas numéricas e de texto
         colunas_invalidas = ["Ficheiro", "Folha"]
         df_graficos = df_total.drop(columns=[col for col in colunas_invalidas if col in df_total.columns])
         colunas_numericas = df_graficos.select_dtypes(include='number').columns.tolist()
@@ -142,10 +142,10 @@ def gerar_grafico():
         flash("Nenhum dado disponível. Por favor, carregue um arquivo Excel.", "danger")
         return redirect(url_for("rotas.dashboard"))
 
-    # Recuperar dados da sessão
+    #Recuperar dados da sessão
     df = pd.read_json(session['dados_excel'])
     
-    # Obter parâmetros do formulário
+    #Obter parâmetros do formulário
     coluna_x = request.form.get('coluna_x')
     coluna_y = request.form.get('coluna_y')
     tipos_graficos = request.form.getlist('tipos_graficos')
@@ -154,7 +154,7 @@ def gerar_grafico():
         flash("Selecione pelo menos um tipo de gráfico.", "warning")
         return redirect(url_for("rotas.dashboard"))
 
-    # Gerar gráficos
+    #Gerar gráficos
     graficos = {}
     for tipo in tipos_graficos:
         if tipo == "Barras":
@@ -165,20 +165,20 @@ def gerar_grafico():
         elif tipo == "Pizza":
             fig = px.pie(df, names=coluna_x, values=coluna_y, title=f"Gráfico de Pizza: {coluna_y} por {coluna_x}")
 
-        # Configurar layout do gráfico
+        #Configurar layout do gráfico
         fig.update_layout(
             width=800,
             height=500,
             margin=dict(l=50, r=50, t=50, b=50)
         )
         
-        # Guardar o gráfico na sessão para exportação
+        #Guardar o gráfico na sessão para exportação
         session[f'grafico_{tipo}'] = fig.to_json()
         
-        # Converter para HTML
+        #Converter para HTML
         graficos[tipo] = fig.to_html(full_html=False)
 
-    # Recriar os dados para o template
+    #Prévisualização 
     df_graficos = df.drop(columns=["Ficheiro", "Folha"] if "Ficheiro" in df.columns else [])
     colunas_numericas = df_graficos.select_dtypes(include='number').columns.tolist()
     colunas_texto = df_graficos.select_dtypes(include='object').columns.tolist()
@@ -197,10 +197,10 @@ def exportar_grafico(tipo, formato):
         flash("Gráfico não encontrado. Por favor, gere o gráfico novamente.", "danger")
         return redirect(url_for("rotas.dashboard"))
 
-    # Recuperar o gráfico da sessão
+    #Recuperar o gráfico da sessão
     fig = px.Figure().from_json(session[f'grafico_{tipo}'])
     
-    # Criar buffer para o arquivo
+    #Criar buffer para o arquivo
     buffer = io.BytesIO()
     
     if formato == 'png':
