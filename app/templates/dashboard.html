@@ -9,6 +9,63 @@
         <h3>Preview dos dados selecionados</h3>
         <div>{{ preview_html|safe }}</div>
 
+        <!-- Seção de Gráficos -->
+        <div class="graph-section mt-4">
+            <h3>Gerar Gráficos</h3>
+            <form action="{{ url_for('rotas.gerar_grafico') }}" method="post">
+                <div class="form-group">
+                    <label for="coluna_x">Coluna X (Texto):</label>
+                    <select class="form-control" name="coluna_x" id="coluna_x" required>
+                        {% for coluna in colunas_texto %}
+                            <option value="{{ coluna }}">{{ coluna }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="coluna_y">Coluna Y (Numérica):</label>
+                    <select class="form-control" name="coluna_y" id="coluna_y" required>
+                        {% for coluna in colunas_numericas %}
+                            <option value="{{ coluna }}">{{ coluna }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipos de Gráficos:</label><br>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="tipos_graficos" value="Barras" id="barras">
+                        <label class="form-check-label" for="barras">Barras</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="tipos_graficos" value="Linhas" id="linhas">
+                        <label class="form-check-label" for="linhas">Linhas</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="tipos_graficos" value="Pizza" id="pizza">
+                        <label class="form-check-label" for="pizza">Pizza</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Gerar Gráficos</button>
+            </form>
+        </div>
+
+        {% if graficos %}
+            <div class="graphs-container mt-4">
+                {% for tipo, grafico in graficos.items() %}
+                    <div class="graph-item mb-4">
+                        <h4>Gráfico de {{ tipo }}</h4>
+                        {{ grafico|safe }}
+                        <div class="mt-2">
+                            <a href="{{ url_for('rotas.exportar_grafico', tipo=tipo, formato='png') }}" class="btn btn-sm btn-secondary">📥 Exportar como PNG</a>
+                            <a href="{{ url_for('rotas.exportar_grafico', tipo=tipo, formato='pdf') }}" class="btn btn-sm btn-secondary">📥 Exportar como PDF</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
     {% elif folhas_por_ficheiro %}
         <hr>
         <!-- Formulário para seleção das folhas desejadas de cada ficheiro -->
@@ -28,16 +85,19 @@
                 <input type="hidden" name="ficheiros_nome" value="{{ nome }}">
             {% endfor %}
 
-            <button type="submit">Confirmar folhas</button>
+            <button type="submit" class="btn btn-primary">Confirmar folhas</button>
         </form>
 
     {% else %}
         <!-- Formulário para upload de múltiplos ficheiros Excel -->
         <form action="{{ url_for('rotas.upload_excel') }}" method="post" enctype="multipart/form-data">
             <label for="ficheiros">Seleciona ficheiros Excel:</label><br>
-            <input type="file" name="ficheiros" multiple required><br><br>  <!-- Permite enviar vários ficheiros ao mesmo tempo -->
-            <button type="submit">Carregar ficheiros</button>
+            <input type="file" name="ficheiros" multiple required class="form-control"><br><br>  <!-- Permite enviar vários ficheiros ao mesmo tempo -->
+            <button type="submit" class="btn btn-primary">Carregar ficheiros</button>
         </form>
     {% endif %}
 </div>
+
+<!-- Adiciona Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 {% endblock %}

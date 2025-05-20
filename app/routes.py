@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request, Blueprint, session #Importa funções para mostrar páginas, redirecionar, mensagens e ler dados do formulário
+from flask import render_template, redirect, url_for, flash, request, Blueprint, session, send_file #Importa funções para mostrar páginas, redirecionar, mensagens e ler dados do formulário
 from app import db, bcrypt #Importa a base de dados e o sistema de encriptação de senhas
 from flask_login import login_user, logout_user, login_required, current_user #Importa funções de login, logout, proteção de rotas e acesso ao utilizador atual
 from app.forms import LoginForm, CriarContaForm #Importa os formulários criados para login e criação de conta
@@ -99,27 +99,126 @@ def upload_excel():
 @rotas.route("/selecionar_folhas", methods=["POST"])
 @login_required
 def selecionar_folhas():
-    ficheiros_nomes = request.form.getlist("ficheiros_nome")  #Recebe os nomes dos ficheiros do formulário
-    dados_finais = []  #Lista para juntar os DataFrames lidos
+    ficheiros_nomes = request.form.getlist("ficheiros_nome")
+    dados_finais = []
 
     for nome in ficheiros_nomes:
-        folhas_escolhidas = request.form.getlist(f"selecionadas_{nome}")  #Folhas selecionadas pelo utilizador
-        caminho = os.path.join(UPLOAD_FOLDER, secure_filename(nome))  #Caminho completo do ficheiro guardado
+        folhas_escolhidas = request.form.getlist(f"selecionadas_{nome}")
+        caminho = os.path.join(UPLOAD_FOLDER, secure_filename(nome))
 
         if folhas_escolhidas:
-            df = ler_folhas_selecionadas(caminho, folhas_escolhidas)  #Lê só as folhas escolhidas do ficheiro
+            df = ler_folhas_selecionadas(caminho, folhas_escolhidas)
             if df is not None:
-                dados_finais.append(df)  #Adiciona os dados lidos à lista final            
+                dados_finais.append(df)            
         else:
-            flash("Nenhuma folha foi selecionada.", "warning") #Caso não haja folhas selecionadas, dá erro
+            flash("Nenhuma folha foi selecionada.", "warning")
             return redirect(url_for("rotas.dashboard"))
     
     if dados_finais:
-        df_total = pd.concat(dados_finais, ignore_index=True)  #Junta todos os dados num só DataFrame
-        session['dados_excel'] = df_total.to_json(orient='records')  #Guarda o DataFrame como JSON na sessão
-        flash("Dados recebidos com sucesso!", "success")  #Mensagem de sucesso
-        tabela_preview = df_total.to_html(classes='table table-striped', index=False) #Gera a tabela HTML com todos os dados recebidos
-        return render_template("dashboard.html", folhas_por_ficheiro=None, preview_html=tabela_preview) #Envia a tabela para o dashboard (sem necessidade de reescolher ficheiros)
+        df_total = pd.concat(dados_finais, ignore_index=True)
+        session['dados_excel'] = df_total.to_json(orient='records')
+        flash("Dados recebidos com sucesso!", "success")
+        
+        # Identificar colunas numéricas e de texto
+        colunas_invalidas = ["Ficheiro", "Folha"]
+        df_graficos = df_total.drop(columns=[col for col in colunas_invalidas if col in df_total.columns])
+        colunas_numericas = df_graficos.select_dtypes(include='number').columns.tolist()
+        colunas_texto = df_graficos.select_dtypes(include='object').columns.tolist()
+        
+        tabela_preview = df_total.to_html(classes='table table-striped', index=False)
+        return render_template("dashboard.html", 
+                            folhas_por_ficheiro=None, 
+                            preview_html=tabela_preview,
+                            colunas_numericas=colunas_numericas,
+                            colunas_texto=colunas_texto)
     else:
-        flash("Erro ao ler os dados selecionados.", "danger")  #Mensagem de erro se não foi possível ler nada
-        return redirect(url_for("rotas.dashboard"))  #Redireciona de volta ao dashboard
+        flash("Erro ao ler os dados selecionados.", "danger")
+        return redirect(url_for("rotas.dashboard"))
+
+@rotas.route("/gerar_grafico", methods=["POST"])
+@login_required
+def gerar_grafico():
+    if 'dados_excel' not in session:
+        flash("Nenhum dado disponível. Por favor, carregue um arquivo Excel.", "danger")
+        return redirect(url_for("rotas.dashboard"))
+
+    # Recuperar dados da sessão
+    df = pd.read_json(session['dados_excel'])
+    
+    # Obter parâmetros do formulário
+    coluna_x = request.form.get('coluna_x')
+    coluna_y = request.form.get('coluna_y')
+    tipos_graficos = request.form.getlist('tipos_graficos')
+
+    if not tipos_graficos:
+        flash("Selecione pelo menos um tipo de gráfico.", "warning")
+        return redirect(url_for("rotas.dashboard"))
+
+    # Gerar gráficos
+    graficos = {}
+    for tipo in tipos_graficos:
+        if tipo == "Barras":
+            fig = px.bar(df, x=coluna_x, y=coluna_y, title=f"Gráfico de Barras: {coluna_y} por {coluna_x}")
+        elif tipo == "Linhas":
+            df_agrupado = df.groupby(coluna_x, as_index=False)[coluna_y].sum()
+            fig = px.line(df_agrupado, x=coluna_x, y=coluna_y, title=f"Gráfico de Linhas: {coluna_y} por {coluna_x}")
+        elif tipo == "Pizza":
+            fig = px.pie(df, names=coluna_x, values=coluna_y, title=f"Gráfico de Pizza: {coluna_y} por {coluna_x}")
+
+        # Configurar layout do gráfico
+        fig.update_layout(
+            width=800,
+            height=500,
+            margin=dict(l=50, r=50, t=50, b=50)
+        )
+        
+        # Guardar o gráfico na sessão para exportação
+        session[f'grafico_{tipo}'] = fig.to_json()
+        
+        # Converter para HTML
+        graficos[tipo] = fig.to_html(full_html=False)
+
+    # Recriar os dados para o template
+    df_graficos = df.drop(columns=["Ficheiro", "Folha"] if "Ficheiro" in df.columns else [])
+    colunas_numericas = df_graficos.select_dtypes(include='number').columns.tolist()
+    colunas_texto = df_graficos.select_dtypes(include='object').columns.tolist()
+    tabela_preview = df.to_html(classes='table table-striped', index=False)
+
+    return render_template("dashboard.html",
+                         preview_html=tabela_preview,
+                         graficos=graficos,
+                         colunas_numericas=colunas_numericas,
+                         colunas_texto=colunas_texto)
+
+@rotas.route("/exportar_grafico/<tipo>/<formato>")
+@login_required
+def exportar_grafico(tipo, formato):
+    if f'grafico_{tipo}' not in session:
+        flash("Gráfico não encontrado. Por favor, gere o gráfico novamente.", "danger")
+        return redirect(url_for("rotas.dashboard"))
+
+    # Recuperar o gráfico da sessão
+    fig = px.Figure().from_json(session[f'grafico_{tipo}'])
+    
+    # Criar buffer para o arquivo
+    buffer = io.BytesIO()
+    
+    if formato == 'png':
+        fig.write_image(buffer, format='png')
+        mimetype = 'image/png'
+        filename = f'grafico_{tipo.lower()}.png'
+    elif formato == 'pdf':
+        fig.write_image(buffer, format='pdf')
+        mimetype = 'application/pdf'
+        filename = f'grafico_{tipo.lower()}.pdf'
+    else:
+        flash("Formato de exportação inválido.", "danger")
+        return redirect(url_for("rotas.dashboard"))
+
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype=mimetype,
+        as_attachment=True,
+        download_name=filename
+    )
