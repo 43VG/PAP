@@ -5,11 +5,13 @@ from app.forms import LoginForm, CriarContaForm #Importa os formulários criados
 from app.models import Utilizador #Importa o modelo de utilizador (estrutura da base de dados)
 import pandas as pd #Importa pandas para manipulação de dados em tabelas
 import plotly.express as px #Importa plotly para criação de gráficos 
+import plotly.graph_objects as go #Adiciona import do graph_objects
 import base64 #Permite codificar imagens em base64 para exportar
 import io #Biblioteca para trabalhar com ficheiros em memória
 import os #Importa o módulo OS para interagir com o sistema de ficheiros (guardar uploads, criar pastas)
 from .utils import obter_folhas_excel, ler_folhas_selecionadas #Importa funções que extraiem e leem os nomes das folhas de um ficheiro Excel
 from werkzeug.utils import secure_filename #Função que limpa nomes de ficheiros (evita erros de segurança ao guardar ficheiros no disco)
+import json #Importa o módulo json para manipulação de dados JSON
 
 
 rotas = Blueprint('rotas', __name__) #Cria um conjunto de rotas com o nome "rotas" (Blueprint permite organizar as páginas)
@@ -119,7 +121,7 @@ def selecionar_folhas():
         session['dados_excel'] = df_total.to_json(orient='records')
         flash("Dados recebidos com sucesso!", "success")
         
-        # Identificar colunas numéricas e de texto
+        #Identificar colunas numéricas e de texto
         colunas_invalidas = ["Ficheiro", "Folha"]
         df_graficos = df_total.drop(columns=[col for col in colunas_invalidas if col in df_total.columns])
         colunas_numericas = df_graficos.select_dtypes(include='number').columns.tolist()
@@ -142,10 +144,14 @@ def gerar_grafico():
         flash("Nenhum dado disponível. Por favor, carregue um arquivo Excel.", "danger")
         return redirect(url_for("rotas.dashboard"))
 
-    # Recuperar dados da sessão
-    df = pd.read_json(session['dados_excel'])
+    #Recuperar dados da sessão
+    df = pd.read_json(io.StringIO(session['dados_excel']))  #Fix deprecated warning
     
-    # Obter parâmetros do formulário
+    #Inicializar lista de gráficos se não existir
+    if 'lista_graficos' not in session:
+        session['lista_graficos'] = []
+    
+    #Obter parâmetros do formulário
     coluna_x = request.form.get('coluna_x')
     coluna_y = request.form.get('coluna_y')
     tipos_graficos = request.form.getlist('tipos_graficos')
@@ -154,63 +160,93 @@ def gerar_grafico():
         flash("Selecione pelo menos um tipo de gráfico.", "warning")
         return redirect(url_for("rotas.dashboard"))
 
-    # Gerar gráficos
+    #Gerar gráficos
     graficos = {}
     for tipo in tipos_graficos:
         if tipo == "Barras":
-            fig = px.bar(df, x=coluna_x, y=coluna_y, title=f"Gráfico de Barras: {coluna_y} por {coluna_x}")
+            fig = px.bar(df, x=coluna_x, y=coluna_y, title=f"Gráfico {len(session['lista_graficos']) + 1} - Barras: {coluna_y} por {coluna_x}")
         elif tipo == "Linhas":
             df_agrupado = df.groupby(coluna_x, as_index=False)[coluna_y].sum()
-            fig = px.line(df_agrupado, x=coluna_x, y=coluna_y, title=f"Gráfico de Linhas: {coluna_y} por {coluna_x}")
+            fig = px.line(df_agrupado, x=coluna_x, y=coluna_y, title=f"Gráfico {len(session['lista_graficos']) + 1} - Linhas: {coluna_y} por {coluna_x}")
         elif tipo == "Pizza":
-            fig = px.pie(df, names=coluna_x, values=coluna_y, title=f"Gráfico de Pizza: {coluna_y} por {coluna_x}")
+            fig = px.pie(df, names=coluna_x, values=coluna_y, title=f"Gráfico {len(session['lista_graficos']) + 1} - Pizza: {coluna_y} por {coluna_x}")
 
-        # Configurar layout do gráfico
+        #Configurar layout do gráfico
         fig.update_layout(
             width=800,
             height=500,
             margin=dict(l=50, r=50, t=50, b=50)
         )
         
-        # Guardar o gráfico na sessão para exportação
-        session[f'grafico_{tipo}'] = fig.to_json()
+        #Guardar o gráfico na sessão para exportação
+        grafico_id = f"{tipo}_{len(session['lista_graficos'])}"
+        fig_json = fig.to_json()
+        session[f'grafico_{grafico_id}'] = fig_json
         
-        # Converter para HTML
-        graficos[tipo] = fig.to_html(full_html=False)
+        #Converter para HTML
+        graficos[grafico_id] = {
+            'html': fig.to_html(full_html=False, include_plotlyjs=True),
+            'tipo': tipo,
+            'coluna_x': coluna_x,
+            'coluna_y': coluna_y,
+            'json': fig_json  #Incluir o JSON para renderizar na página
+        }
+        
+        #Adicionar à lista de gráficos
+        session['lista_graficos'].append(grafico_id)
+        session.modified = True
 
-    # Recriar os dados para o template
+    #Recriar os dados para o template
     df_graficos = df.drop(columns=["Ficheiro", "Folha"] if "Ficheiro" in df.columns else [])
     colunas_numericas = df_graficos.select_dtypes(include='number').columns.tolist()
     colunas_texto = df_graficos.select_dtypes(include='object').columns.tolist()
     tabela_preview = df.to_html(classes='table table-striped', index=False)
 
+    #Preparar gráficos anteriores
+    graficos_anteriores = {}
+    for k in session['lista_graficos'][:-len(graficos)]:
+        if f'grafico_{k}' in session:
+            fig = go.Figure(data=go.Figure(json.loads(session[f'grafico_{k}'])).data)
+            fig.update_layout(
+                width=800,
+                height=500,
+                margin=dict(l=50, r=50, t=50, b=50)
+            )
+            graficos_anteriores[k] = fig.to_html(full_html=False, include_plotlyjs=True)
+
     return render_template("dashboard.html",
                          preview_html=tabela_preview,
                          graficos=graficos,
+                         graficos_anteriores=graficos_anteriores,
                          colunas_numericas=colunas_numericas,
                          colunas_texto=colunas_texto)
 
-@rotas.route("/exportar_grafico/<tipo>/<formato>")
+@rotas.route("/exportar_grafico/<grafico_id>/<formato>")
 @login_required
-def exportar_grafico(tipo, formato):
-    if f'grafico_{tipo}' not in session:
+def exportar_grafico(grafico_id, formato):
+    if f'grafico_{grafico_id}' not in session:
         flash("Gráfico não encontrado. Por favor, gere o gráfico novamente.", "danger")
         return redirect(url_for("rotas.dashboard"))
 
-    # Recuperar o gráfico da sessão
-    fig = px.Figure().from_json(session[f'grafico_{tipo}'])
+    #Recuperar o gráfico da sessão
+    fig = go.Figure(data=go.Figure(json.loads(session[f'grafico_{grafico_id}'])).data)
+    fig.update_layout(
+        width=800,
+        height=500,
+        margin=dict(l=50, r=50, t=50, b=50)
+    )
     
-    # Criar buffer para o arquivo
+    #Criar buffer para o arquivo
     buffer = io.BytesIO()
     
     if formato == 'png':
         fig.write_image(buffer, format='png')
         mimetype = 'image/png'
-        filename = f'grafico_{tipo.lower()}.png'
+        filename = f'grafico_{grafico_id}.png'
     elif formato == 'pdf':
         fig.write_image(buffer, format='pdf')
         mimetype = 'application/pdf'
-        filename = f'grafico_{tipo.lower()}.pdf'
+        filename = f'grafico_{grafico_id}.pdf'
     else:
         flash("Formato de exportação inválido.", "danger")
         return redirect(url_for("rotas.dashboard"))
@@ -222,3 +258,14 @@ def exportar_grafico(tipo, formato):
         as_attachment=True,
         download_name=filename
     )
+
+@rotas.route("/limpar_graficos", methods=["POST"])
+@login_required
+def limpar_graficos():
+    #Limpar todos os gráficos da sessão
+    if 'lista_graficos' in session:
+        for grafico_id in session['lista_graficos']:
+            session.pop(f'grafico_{grafico_id}', None)
+        session.pop('lista_graficos', None)
+    flash("Todos os gráficos foram limpos.", "success")
+    return redirect(url_for("rotas.dashboard"))
