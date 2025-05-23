@@ -1,33 +1,30 @@
-<!DOCTYPE html>  <!-- Define o tipo de documento como HTML5 -->
-<html lang="pt">  <!-- Define a língua principal do site como português -->
-<head>
-    <meta charset="UTF-8">  <!-- Define a codificação de caracteres como UTF-8 -->
-    <title>{% block titulo %}Página Inicial{% endblock %}</title>  <!-- Bloco de título que pode ser alterado em outras páginas -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">  <!-- Liga o ficheiro CSS externo localizado na pasta static -->
-</head>
-<body>
-    <div class="container">  <!-- Div principal para organizar o conteúdo -->
-        <header>
-            <h1>Bem-vindo ao Sistema</h1>  <!-- Título principal da página -->
-        </header>
+{% extends "base.html" %}
 
-        <nav>
-            <ul>
-                <li><a href="{{ url_for('rotas.homepage') }}">Início</a></li>  <!-- Link para a homepage -->
-                {% if current_user.is_authenticated %}  <!-- Verifica se o utilizador está autenticado -->
-                    <li><a href="{{ url_for('rotas.logout') }}">Sair</a></li>  <!-- Se sim, mostra botão para sair -->
-                {% else %}
-                    <li><a href="{{ url_for('rotas.criarconta') }}">Criar Conta</a></li>  <!-- Se não, mostra opções de registo -->
-                    <li><a href="{{ url_for('rotas.login') }}">Entrar</a></li>  <!-- e login -->
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="text-center mb-4">Bem-vindo</h2>
+                {% if not current_user.is_authenticated %}
+                    <form method="POST" class="mb-3">
+                        {{ formLog.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ formLog.email.label(class="form-label") }}
+                            {{ formLog.email(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ formLog.senha.label(class="form-label") }}
+                            {{ formLog.senha(class="form-control") }}
+                        </div>
+                        {{ formLog.botao_confirm(class="btn btn-primary w-100") }}
+                    </form>
+                    <p class="text-center">
+                        <a href="{{ url_for('rotas.criarconta') }}">Ainda não tem conta? Criar conta</a>
+                    </p>
                 {% endif %}
-            </ul>
-        </nav>
-
-        <div class="content">
-            {% block content %}  
-            <!-- para futuras paginas -->
-            {% endblock %}
+            </div>
         </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

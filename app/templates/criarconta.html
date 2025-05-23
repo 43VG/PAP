@@ -1,42 +1,53 @@
-{% extends "homepage.html" %}  <!-- Esta página herda a disposição definida no ficheiro homepage.html -->
+{% extends "base.html" %}
 
-{% block content %}  <!-- Início do conteúdo personalizado -->
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="text-center mb-4">Criar Conta</h2>
+                <form method="POST">
+                    {{ formLog.hidden_tag() }}
 
-<h2>Criar Conta</h2>
-<form method="POST">  <!-- Formulário que envia os dados com POST -->
-    {{ formLog.hidden_tag() }}  <!-- Proteção contra CSRF -->
+                    <div class="mb-3">
+                        {{ formLog.nome.label(class="form-label") }}
+                        {{ formLog.nome(class="form-control") }}
+                        {% for error in formLog.nome.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
 
-    <div>
-        {{ formLog.nome.label }} {{ formLog.nome() }}  <!-- Campo nome -->
-        {% for error in formLog.nome.errors %}  <!-- Mostrar erro do nome -->
-            <span style="color:red">{{ error }}</span>  <!-- Texto do erro -->
-        {% endfor %}
+                    <div class="mb-3">
+                        {{ formLog.email.label(class="form-label") }}
+                        {{ formLog.email(class="form-control") }}
+                        {% for error in formLog.email.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ formLog.senha.label(class="form-label") }}
+                        {{ formLog.senha(class="form-control") }}
+                        {% for error in formLog.senha.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ formLog.senha_confirmacao.label(class="form-label") }}
+                        {{ formLog.senha_confirmacao(class="form-control") }}
+                        {% for error in formLog.senha_confirmacao.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    {{ formLog.botao_confirm(class="btn btn-primary w-100") }}
+                </form>
+                <p class="text-center mt-3">
+                    <a href="{{ url_for('rotas.login') }}">Já tem conta? Faça login</a>
+                </p>
+            </div>
+        </div>
     </div>
-
-    <div>
-        {{ formLog.email.label }} {{ formLog.email() }}  <!-- Campo email -->
-        {% for error in formLog.email.errors %}  <!-- Mostrar erro do email -->
-            <span style="color:red">{{ error }}</span>  <!-- Texto do erro -->
-        {% endfor %}
-    </div>
-
-    <div>
-        {{ formLog.senha.label }} {{ formLog.senha() }}  <!-- Campo senha -->
-        {% for error in formLog.senha.errors %}  <!-- Mostrar erro da senha -->
-            <span style="color:red">{{ error }}</span>  <!-- Texto do erro -->
-        {% endfor %}
-    </div>
-
-    <div>
-        {{ formLog.senha_confirmacao.label }} {{ formLog.senha_confirmacao() }}  <!-- Confirmar senha -->
-        {% for error in formLog.senha_confirmacao.errors %}  <!-- Mostrar erro da confirmação -->
-            <span style="color:red">{{ error }}</span>  <!-- Texto do erro -->
-        {% endfor %}
-    </div>
-
-    <div>
-        {{ formLog.botao_confirm() }}  <!-- Botão "Criar Conta" -->
-    </div>
-</form>
-
+</div>
 {% endblock %}  
