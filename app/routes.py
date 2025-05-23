@@ -12,6 +12,7 @@ import os #Importa o módulo OS para interagir com o sistema de ficheiros (guard
 from .utils import obter_folhas_excel, ler_folhas_selecionadas #Importa funções que extraiem e leem os nomes das folhas de um ficheiro Excel
 from werkzeug.utils import secure_filename #Função que limpa nomes de ficheiros (evita erros de segurança ao guardar ficheiros no disco)
 import json #Importa o módulo json para manipulação de dados JSON
+import shutil #Para operações com diretórios
 
 
 rotas = Blueprint('rotas', __name__) #Cria um conjunto de rotas com o nome "rotas" (Blueprint permite organizar as páginas)
@@ -137,6 +138,15 @@ def selecionar_folhas():
         flash("Erro ao ler os dados selecionados.", "danger")
         return redirect(url_for("rotas.dashboard"))
 
+GRAPHS_FOLDER = "graficos_temp"
+os.makedirs(GRAPHS_FOLDER, exist_ok=True)
+
+def limpar_pasta_graficos():
+    """Limpa a pasta de gráficos temporários"""
+    if os.path.exists(GRAPHS_FOLDER):
+        shutil.rmtree(GRAPHS_FOLDER)
+        os.makedirs(GRAPHS_FOLDER)
+
 @rotas.route("/gerar_grafico", methods=["POST"])
 @login_required
 def gerar_grafico():
@@ -145,9 +155,11 @@ def gerar_grafico():
         return redirect(url_for("rotas.dashboard"))
 
     #Recuperar dados da sessão
-    df = pd.read_json(io.StringIO(session['dados_excel']))  #Fix deprecated warning
+    df = pd.read_json(io.StringIO(session['dados_excel']))  
     
-    #Inicializar lista de gráficos se não existir
+    #Inicializar ou resetar contadores e listas se necessário
+    if 'grafico_counter' not in session:
+        session['grafico_counter'] = 0
     if 'lista_graficos' not in session:
         session['lista_graficos'] = []
     
@@ -160,16 +172,27 @@ def gerar_grafico():
         flash("Selecione pelo menos um tipo de gráfico.", "warning")
         return redirect(url_for("rotas.dashboard"))
 
+    #Mover gráficos recentes para anteriores
+    if 'graficos_recentes' in session:
+        for grafico_id in session['graficos_recentes']:
+            if grafico_id not in session.get('graficos_anteriores', []):
+                if 'graficos_anteriores' not in session:
+                    session['graficos_anteriores'] = []
+                session['graficos_anteriores'].append(grafico_id)
+
     #Gerar gráficos
     graficos = {}
+    session['graficos_recentes'] = []  # Reset graficos recentes
+
     for tipo in tipos_graficos:
+        session['grafico_counter'] += 1
         if tipo == "Barras":
-            fig = px.bar(df, x=coluna_x, y=coluna_y, title=f"Gráfico {len(session['lista_graficos']) + 1} - Barras: {coluna_y} por {coluna_x}")
+            fig = px.bar(df, x=coluna_x, y=coluna_y, title=f"Gráfico {session['grafico_counter']} - Barras: {coluna_y} por {coluna_x}")
         elif tipo == "Linhas":
             df_agrupado = df.groupby(coluna_x, as_index=False)[coluna_y].sum()
-            fig = px.line(df_agrupado, x=coluna_x, y=coluna_y, title=f"Gráfico {len(session['lista_graficos']) + 1} - Linhas: {coluna_y} por {coluna_x}")
+            fig = px.line(df_agrupado, x=coluna_x, y=coluna_y, title=f"Gráfico {session['grafico_counter']} - Linhas: {coluna_y} por {coluna_x}")
         elif tipo == "Pizza":
-            fig = px.pie(df, names=coluna_x, values=coluna_y, title=f"Gráfico {len(session['lista_graficos']) + 1} - Pizza: {coluna_y} por {coluna_x}")
+            fig = px.pie(df, names=coluna_x, values=coluna_y, title=f"Gráfico {session['grafico_counter']} - Pizza: {coluna_y} por {coluna_x}")
 
         #Configurar layout do gráfico
         fig.update_layout(
@@ -178,22 +201,26 @@ def gerar_grafico():
             margin=dict(l=50, r=50, t=50, b=50)
         )
         
-        #Guardar o gráfico na sessão para exportação
-        grafico_id = f"{tipo}_{len(session['lista_graficos'])}"
-        fig_json = fig.to_json()
-        session[f'grafico_{grafico_id}'] = fig_json
+        #Gerar ID único para o gráfico
+        grafico_id = f"{tipo}_{session['grafico_counter']}"
         
-        #Converter para HTML
+        #Salvar o gráfico em arquivo
+        grafico_path = os.path.join(GRAPHS_FOLDER, f"{grafico_id}.json")
+        with open(grafico_path, 'w') as f:
+            json.dump(fig.to_json(), f)
+        
+        #Converter para HTML e salvar apenas metadados na sessão
+        html = fig.to_html(full_html=False, include_plotlyjs=True)
         graficos[grafico_id] = {
-            'html': fig.to_html(full_html=False, include_plotlyjs=True),
+            'html': html,
             'tipo': tipo,
             'coluna_x': coluna_x,
-            'coluna_y': coluna_y,
-            'json': fig_json  #Incluir o JSON para renderizar na página
+            'coluna_y': coluna_y
         }
         
-        #Adicionar à lista de gráficos
+        #Adicionar à lista de gráficos e gráficos recentes
         session['lista_graficos'].append(grafico_id)
+        session['graficos_recentes'].append(grafico_id)
         session.modified = True
 
     #Recriar os dados para o template
@@ -204,15 +231,18 @@ def gerar_grafico():
 
     #Preparar gráficos anteriores
     graficos_anteriores = {}
-    for k in session['lista_graficos'][:-len(graficos)]:
-        if f'grafico_{k}' in session:
-            fig = go.Figure(data=go.Figure(json.loads(session[f'grafico_{k}'])).data)
-            fig.update_layout(
-                width=800,
-                height=500,
-                margin=dict(l=50, r=50, t=50, b=50)
-            )
-            graficos_anteriores[k] = fig.to_html(full_html=False, include_plotlyjs=True)
+    for k in session.get('graficos_anteriores', []):
+        grafico_path = os.path.join(GRAPHS_FOLDER, f"{k}.json")
+        if os.path.exists(grafico_path):
+            with open(grafico_path, 'r') as f:
+                fig_data = json.load(f)
+                fig = go.Figure(data=go.Figure(json.loads(fig_data)).data)
+                fig.update_layout(
+                    width=800,
+                    height=500,
+                    margin=dict(l=50, r=50, t=50, b=50)
+                )
+                graficos_anteriores[k] = fig.to_html(full_html=False, include_plotlyjs=True)
 
     return render_template("dashboard.html",
                          preview_html=tabela_preview,
@@ -224,17 +254,20 @@ def gerar_grafico():
 @rotas.route("/exportar_grafico/<grafico_id>/<formato>")
 @login_required
 def exportar_grafico(grafico_id, formato):
-    if f'grafico_{grafico_id}' not in session:
+    grafico_path = os.path.join(GRAPHS_FOLDER, f"{grafico_id}.json")
+    if not os.path.exists(grafico_path):
         flash("Gráfico não encontrado. Por favor, gere o gráfico novamente.", "danger")
         return redirect(url_for("rotas.dashboard"))
 
-    #Recuperar o gráfico da sessão
-    fig = go.Figure(data=go.Figure(json.loads(session[f'grafico_{grafico_id}'])).data)
-    fig.update_layout(
-        width=800,
-        height=500,
-        margin=dict(l=50, r=50, t=50, b=50)
-    )
+    #Recuperar o gráfico do arquivo
+    with open(grafico_path, 'r') as f:
+        fig_data = json.load(f)
+        fig = go.Figure(data=go.Figure(json.loads(fig_data)).data)
+        fig.update_layout(
+            width=800,
+            height=500,
+            margin=dict(l=50, r=50, t=50, b=50)
+        )
     
     #Criar buffer para o arquivo
     buffer = io.BytesIO()
@@ -262,10 +295,17 @@ def exportar_grafico(grafico_id, formato):
 @rotas.route("/limpar_graficos", methods=["POST"])
 @login_required
 def limpar_graficos():
-    #Limpar todos os gráficos da sessão
+    #Limpar todos os gráficos da sessão e arquivos
     if 'lista_graficos' in session:
-        for grafico_id in session['lista_graficos']:
-            session.pop(f'grafico_{grafico_id}', None)
         session.pop('lista_graficos', None)
+    
+    #Limpar as listas de gráficos recentes e anteriores
+    session.pop('graficos_recentes', None)
+    session.pop('graficos_anteriores', None)
+    session.pop('grafico_counter', None)
+    
+    #Limpar arquivos de gráficos
+    limpar_pasta_graficos()
+    
     flash("Todos os gráficos foram limpos.", "success")
     return redirect(url_for("rotas.dashboard"))
