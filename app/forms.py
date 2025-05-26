@@ -12,9 +12,9 @@ class LoginForm(FlaskForm):  #Formulário usado para o login
 
 class CriarContaForm(FlaskForm):  #Formulário usado para criar nova conta
     nome = StringField('Nome', validators=[DataRequired()])  #Campo de nome obrigatório
-    email = StringField('Email', validators=[DataRequired(), Email()])  #Campo de email obrigatório e com validação de formato
+    email = StringField('Email', validators=[DataRequired(), Email(message="Endereço inválido.")])  #Campo de email obrigatório e com validação de formato
     senha = PasswordField('Senha', validators=[DataRequired()])  #Campo de senha obrigatório
-    senha_confirmacao = PasswordField('Confirmar Senha', validators=[DataRequired(), EqualTo('senha')])  #Campo que deve ser igual à senha
+    senha_confirmacao = PasswordField('Confirmar Senha', validators=[DataRequired(), EqualTo('senha', message="A senha deve ser igual em ambos os campos.")])  #Campo que deve ser igual à senha
     botao_confirm = SubmitField('Criar Conta')  #Botão para submeter o formulário
 
     def validate_email(self, email):  #Validação personalizada para garantir que o email ainda não existe na base de dados
