@@ -77,7 +77,7 @@
                             <label for="coluna_x" class="form-label">Coluna X (Texto):</label>
                             <select class="form-select" name="coluna_x" id="coluna_x" required>
                                 {% for coluna in colunas_texto %}
-                                    <option value="{{ coluna }}">{{ coluna }}</option>
+                                    <option value="{{ coluna }}">{{ coluna.replace('_', ' ') }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -86,7 +86,7 @@
                             <label for="coluna_y" class="form-label">Coluna Y (Numérica):</label>
                             <select class="form-select" name="coluna_y" id="coluna_y" required>
                                 {% for coluna in colunas_numericas %}
-                                    <option value="{{ coluna }}">{{ coluna }}</option>
+                                    <option value="{{ coluna }}">{{ coluna.replace('_', ' ') }}</option>
                                 {% endfor %}
                             </select>
                         </div>

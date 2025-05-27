@@ -102,6 +102,11 @@ def upload_excel():
 @rotas.route("/selecionar_folhas", methods=["POST"])
 @login_required
 def selecionar_folhas():
+    #Preservar autenticação enquanto limpa outros dados da sessão
+    user_id = session.get('_user_id')
+    session.clear()
+    session['_user_id'] = user_id
+    
     ficheiros_nomes = request.form.getlist("ficheiros_nome")
     dados_finais = []
 
@@ -112,6 +117,8 @@ def selecionar_folhas():
         if folhas_escolhidas:
             df = ler_folhas_selecionadas(caminho, folhas_escolhidas)
             if df is not None:
+                #Garantir que os nomes das colunas estão normalizados
+                df.columns = df.columns.str.strip().str.replace(' ', '_')
                 dados_finais.append(df)            
         else:
             flash("Nenhuma folha foi selecionada.", "warning")
@@ -119,14 +126,33 @@ def selecionar_folhas():
     
     if dados_finais:
         df_total = pd.concat(dados_finais, ignore_index=True)
-        session['dados_excel'] = df_total.to_json(orient='records')
-        flash("Dados recebidos com sucesso!", "success")
+        
+        #Debug: mostrar estado dos dados antes de processar
+        print("\nColunas antes do processamento:", df_total.columns.tolist())
         
         #Identificar colunas numéricas e de texto
         colunas_invalidas = ["Ficheiro", "Folha"]
         df_graficos = df_total.drop(columns=[col for col in colunas_invalidas if col in df_total.columns])
-        colunas_numericas = df_graficos.select_dtypes(include='number').columns.tolist()
-        colunas_texto = df_graficos.select_dtypes(include='object').columns.tolist()
+
+        #Forçar a detecção correta dos tipos de dados
+        for coluna in df_graficos.columns:
+            if df_graficos[coluna].dtype == 'object':
+                #Tenta converter para numérico, se falhar mantém como texto
+                try:
+                    df_graficos[coluna] = pd.to_numeric(df_graficos[coluna].str.replace(',', '.'))
+                except:
+                    pass
+        
+        colunas_numericas = df_graficos.select_dtypes(include=['int64', 'float64']).columns.tolist()
+        colunas_texto = df_graficos.select_dtypes(exclude=['int64', 'float64']).columns.tolist()
+        
+        #Debug: mostrar estado final dos dados
+        print("\nColunas numéricas:", colunas_numericas)
+        print("Colunas texto:", colunas_texto)
+        
+        #Guardar os dados na sessão
+        session['dados_excel'] = df_total.to_json(orient='records')
+        flash("Dados recebidos com sucesso!", "success")
         
         tabela_preview = df_total.to_html(classes='table table-striped', index=False)
         return render_template("dashboard.html", 
@@ -157,6 +183,12 @@ def gerar_grafico():
     #Recuperar dados da sessão
     df = pd.read_json(io.StringIO(session['dados_excel']))  
     
+    #Garantir que os nomes das colunas estão normalizados
+    df.columns = df.columns.str.strip().str.replace(' ', '_')
+    
+    #Debug: imprimir colunas disponíveis
+    print("Colunas no DataFrame:", df.columns.tolist())
+    
     #Inicializar ou resetar contadores e listas se necessário
     if 'grafico_counter' not in session:
         session['grafico_counter'] = 0
@@ -168,8 +200,19 @@ def gerar_grafico():
     coluna_y = request.form.get('coluna_y')
     tipos_graficos = request.form.getlist('tipos_graficos')
 
+    print(f"Coluna X selecionada: {coluna_x}")
+    print(f"Coluna Y selecionada: {coluna_y}")
+
     if not tipos_graficos:
         flash("Selecione pelo menos um tipo de gráfico.", "warning")
+        return redirect(url_for("rotas.dashboard"))
+
+    #Verificar se as colunas existem no DataFrame
+    if coluna_x not in df.columns:
+        flash(f"Coluna '{coluna_x}' não encontrada. Colunas disponíveis: {', '.join(df.columns)}", "danger")
+        return redirect(url_for("rotas.dashboard"))
+    if coluna_y not in df.columns:
+        flash(f"Coluna '{coluna_y}' não encontrada. Colunas disponíveis: {', '.join(df.columns)}", "danger")
         return redirect(url_for("rotas.dashboard"))
 
     #Mover gráficos recentes para anteriores
@@ -182,7 +225,7 @@ def gerar_grafico():
 
     #Gerar gráficos
     graficos = {}
-    session['graficos_recentes'] = []  # Reset graficos recentes
+    session['graficos_recentes'] = []
 
     for tipo in tipos_graficos:
         session['grafico_counter'] += 1
@@ -214,8 +257,8 @@ def gerar_grafico():
         graficos[grafico_id] = {
             'html': html,
             'tipo': tipo,
-            'coluna_x': coluna_x,
-            'coluna_y': coluna_y
+            'coluna_x': coluna_x.replace('_', ' '),  #Converter de volta para exibição
+            'coluna_y': coluna_y.replace('_', ' ')   #Converter de volta para exibição
         }
         
         #Adicionar à lista de gráficos e gráficos recentes
@@ -225,8 +268,8 @@ def gerar_grafico():
 
     #Recriar os dados para o template
     df_graficos = df.drop(columns=["Ficheiro", "Folha"] if "Ficheiro" in df.columns else [])
-    colunas_numericas = df_graficos.select_dtypes(include='number').columns.tolist()
-    colunas_texto = df_graficos.select_dtypes(include='object').columns.tolist()
+    colunas_numericas = df_graficos.select_dtypes(include=['int64', 'float64']).columns.tolist()
+    colunas_texto = df_graficos.select_dtypes(exclude=['int64', 'float64']).columns.tolist()
     tabela_preview = df.to_html(classes='table table-striped', index=False)
 
     #Preparar gráficos anteriores
