@@ -136,25 +136,39 @@ def selecionar_folhas():
 
         #Forçar a detecção correta dos tipos de dados
         for coluna in df_graficos.columns:
-            if df_graficos[coluna].dtype == 'object':
-                #Tenta converter para numérico, se falhar mantém como texto
+            #Converter datas para o formato correto
+            if 'Data' in coluna:
+                try:
+                    df_graficos[coluna] = pd.to_datetime(df_graficos[coluna])
+                except:
+                    pass
+            #Converter valores numéricos
+            elif df_graficos[coluna].dtype == 'object':
                 try:
                     df_graficos[coluna] = pd.to_numeric(df_graficos[coluna].str.replace(',', '.'))
                 except:
                     pass
         
+        #Identificar tipos de colunas para o gráfico
         colunas_numericas = df_graficos.select_dtypes(include=['int64', 'float64']).columns.tolist()
-        colunas_texto = df_graficos.select_dtypes(exclude=['int64', 'float64']).columns.tolist()
+        colunas_texto = df_graficos.select_dtypes(include=['object', 'datetime64[ns]']).columns.tolist()
         
         #Debug: mostrar estado final dos dados
         print("\nColunas numéricas:", colunas_numericas)
         print("Colunas texto:", colunas_texto)
         
-        #Guardar os dados na sessão
-        session['dados_excel'] = df_total.to_json(orient='records')
+        #Converter datas para string antes de salvar na sessão
+        for coluna in df_graficos.columns:
+            if pd.api.types.is_datetime64_any_dtype(df_graficos[coluna]):
+                df_graficos[coluna] = df_graficos[coluna].dt.strftime('%Y-%m-%d')
+        
+        #Guardar os dados e tipos na sessão
+        session['dados_excel'] = df_graficos.to_json(orient='records')
+        session['colunas_numericas'] = colunas_numericas
+        session['colunas_texto'] = colunas_texto
         flash("Dados recebidos com sucesso!", "success")
         
-        tabela_preview = df_total.to_html(classes='table table-striped', index=False)
+        tabela_preview = df_graficos.to_html(classes='table table-striped', index=False)
         return render_template("dashboard.html", 
                             folhas_por_ficheiro=None, 
                             preview_html=tabela_preview,
@@ -180,8 +194,10 @@ def gerar_grafico():
         flash("Nenhum dado disponível. Por favor, carregue um arquivo Excel.", "danger")
         return redirect(url_for("rotas.dashboard"))
 
-    #Recuperar dados da sessão
-    df = pd.read_json(io.StringIO(session['dados_excel']))  
+    #Recuperar dados e tipos da sessão
+    df = pd.read_json(io.StringIO(session['dados_excel']))
+    colunas_numericas = session.get('colunas_numericas', [])
+    colunas_texto = session.get('colunas_texto', [])
     
     #Garantir que os nomes das colunas estão normalizados
     df.columns = df.columns.str.strip().str.replace(' ', '_')
@@ -214,6 +230,11 @@ def gerar_grafico():
     if coluna_y not in df.columns:
         flash(f"Coluna '{coluna_y}' não encontrada. Colunas disponíveis: {', '.join(df.columns)}", "danger")
         return redirect(url_for("rotas.dashboard"))
+
+    #Converter datas de volta para datetime se necessário
+    if 'Data' in coluna_x:
+        df[coluna_x] = pd.to_datetime(df[coluna_x])
+        df = df.sort_values(coluna_x)  #Ordenar por data
 
     #Mover gráficos recentes para anteriores
     if 'graficos_recentes' in session:
@@ -266,10 +287,6 @@ def gerar_grafico():
         session['graficos_recentes'].append(grafico_id)
         session.modified = True
 
-    #Recriar os dados para o template
-    df_graficos = df.drop(columns=["Ficheiro", "Folha"] if "Ficheiro" in df.columns else [])
-    colunas_numericas = df_graficos.select_dtypes(include=['int64', 'float64']).columns.tolist()
-    colunas_texto = df_graficos.select_dtypes(exclude=['int64', 'float64']).columns.tolist()
     tabela_preview = df.to_html(classes='table table-striped', index=False)
 
     #Preparar gráficos anteriores
