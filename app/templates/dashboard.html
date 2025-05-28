@@ -18,8 +18,13 @@
     {% if preview_html %}
         <!-- Mostra a tabela de preview -->
         <div class="card mb-4">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h3 class="h5 mb-0">Preview dos dados selecionados</h3>
+                <form action="{{ url_for('rotas.voltar_selecao_folhas') }}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-secondary">
+                        <i class="icone-voltar margem-dir-1"></i>Voltar para Seleção de Folhas
+                    </button>
+                </form>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -157,8 +162,13 @@
 
     {% elif folhas_por_ficheiro %}
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h3 class="h5 mb-0">Selecione as folhas que quer usar</h3>
+                <form action="{{ url_for('rotas.voltar_upload') }}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-secondary">
+                        <i class="icone-voltar margem-dir-1"></i>Voltar para Upload
+                    </button>
+                </form>
             </div>
             <div class="card-body">
                 <form action="{{ url_for('rotas.selecionar_folhas') }}" method="post">

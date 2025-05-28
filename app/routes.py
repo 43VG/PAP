@@ -415,3 +415,36 @@ def limpar_graficos():
     
     flash("Todos os gráficos foram limpos.", "success")
     return redirect(url_for("rotas.dashboard"))
+
+@rotas.route("/voltar_selecao_folhas", methods=["POST"])
+@login_required
+def voltar_selecao_folhas():
+    #Preservar apenas os dados dos arquivos e folhas
+    ficheiros_nomes = []
+    folhas_por_ficheiro = {}
+    
+    #Recuperar os arquivos da pasta de uploads
+    if os.path.exists(UPLOAD_FOLDER):
+        for arquivo in os.listdir(UPLOAD_FOLDER):
+            if arquivo.endswith(('.xlsx', '.xls')):
+                ficheiros_nomes.append(arquivo)
+                caminho = os.path.join(UPLOAD_FOLDER, arquivo)
+                folhas = obter_folhas_excel(caminho)
+                folhas_por_ficheiro[arquivo] = folhas
+    
+    return render_template("dashboard.html", folhas_por_ficheiro=folhas_por_ficheiro)
+
+@rotas.route("/voltar_upload", methods=["POST"])
+@login_required
+def voltar_upload():
+    #Limpar arquivos temporários
+    if os.path.exists(UPLOAD_FOLDER):
+        for arquivo in os.listdir(UPLOAD_FOLDER):
+            caminho = os.path.join(UPLOAD_FOLDER, arquivo)
+            try:
+                if os.path.isfile(caminho):
+                    os.remove(caminho)
+            except Exception as e:
+                print(f"Erro ao remover arquivo {arquivo}: {e}")
+    
+    return render_template("dashboard.html")
