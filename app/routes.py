@@ -28,7 +28,7 @@ def homepage(): #Página inicial do site (login direto se já estiver autenticad
             login_user(utilizador)  #Faz login do utilizador
             return redirect(url_for("rotas.dashboard"))  #Vai para o dashboard
         else:
-            flash("Login inválido.", "danger")  #Mostra mensagem de erro
+            flash("Email ou senha incorretos. Por favor, tente novamente.", "danger")  #Mostra mensagem de erro
     return render_template("homepage.html", formLog=formLog)  #Mostra a homepage com o formulário
 
 @rotas.route("/criarconta", methods=["GET", "POST"])
@@ -59,7 +59,7 @@ def login():
             login_user(utilizador)  #Faz login
             return redirect(url_for("rotas.dashboard"))  #Vai para o dashboard
         else:
-            flash("Login inválido.", "danger")  #Mensagem de erro
+            flash("Email ou senha incorretos. Por favor, tente novamente.", "danger")  #Mensagem de erro
     return render_template("login.html", formLog=formLog)  #Mostra o formulário
 
 @rotas.route("/logout")
@@ -87,14 +87,34 @@ def upload_excel():
         flash("Nenhum ficheiro foi enviado.", "danger")  #Mostra mensagem de erro se nenhum ficheiro for enviado
         return redirect(url_for("rotas.dashboard"))  #Redireciona de volta ao dashboard
 
+    arquivos_invalidos = []  #Lista para guardar nomes dos arquivos inválidos
+    tem_excel = False  #Flag para verificar se pelo menos um arquivo Excel foi enviado
+
     for ficheiro in ficheiros_recebidos:
-        if ficheiro.filename.endswith(".xlsx"): #Verificar que é ficheiro Excel
+        if ficheiro.filename.endswith((".xlsx", ".xls")):  #Verificar que é ficheiro Excel (.xlsx ou .xls)
+            tem_excel = True
             nome_seguro = secure_filename(ficheiro.filename)  #Limpa o nome do ficheiro para evitar erros de segurança
             caminho = os.path.join(UPLOAD_FOLDER, nome_seguro)  #Define o caminho onde o ficheiro será guardado
             ficheiro.save(caminho)  #Guarda o ficheiro localmente
 
             folhas = obter_folhas_excel(caminho)  #Usa função auxiliar para obter os nomes das folhas do Excel
-            folhas_por_ficheiro[nome_seguro] = folhas  #Associa as folhas ao nome do ficheiro no dicionário
+            if folhas:  #Se conseguiu ler as folhas
+                folhas_por_ficheiro[nome_seguro] = folhas  #Associa as folhas ao nome do ficheiro no dicionário
+            else:  #Se não conseguiu ler as folhas
+                arquivos_invalidos.append(nome_seguro)  #Adiciona à lista de inválidos
+                if os.path.exists(caminho):
+                    os.remove(caminho)  #Remove o arquivo inválido do sistema
+        else:
+            arquivos_invalidos.append(ficheiro.filename)  #Adiciona arquivos não-Excel à lista de inválidos
+
+    if arquivos_invalidos:
+        flash(f"Os seguintes arquivos não são Excel válidos: {', '.join(arquivos_invalidos)}", "warning")  #Mostra mensagem com lista de arquivos inválidos
+        if not tem_excel:
+            return redirect(url_for("rotas.dashboard"))  #Volta ao dashboard se não houver nenhum Excel válido
+
+    if not folhas_por_ficheiro:
+        flash("Nenhum arquivo Excel válido foi enviado.", "danger")  #Mensagem se nenhum Excel válido foi processado
+        return redirect(url_for("rotas.dashboard"))  #Volta ao dashboard
 
     return render_template("dashboard.html", folhas_por_ficheiro=folhas_por_ficheiro)  #Mostra a seleção de folhas no dashboard
 
@@ -102,12 +122,34 @@ def upload_excel():
 @rotas.route("/selecionar_folhas", methods=["POST"])
 @login_required
 def selecionar_folhas():
-    #Preservar autenticação enquanto limpa outros dados da sessão
-    user_id = session.get('_user_id')
-    session.clear()
-    session['_user_id'] = user_id
+    #Limpar apenas dados específicos da sessão em vez de toda a sessão
+    chaves_sessao_manter = ['_user_id', '_fresh']
+    dados_sessao_manter = {chave: session[chave] for chave in chaves_sessao_manter if chave in session}
     
     ficheiros_nomes = request.form.getlist("ficheiros_nome")
+    tem_folhas_selecionadas = False  #Flag para verificar se alguma folha foi selecionada
+    
+    #Verificar se pelo menos uma folha foi selecionada
+    for nome in ficheiros_nomes:
+        folhas_escolhidas = request.form.getlist(f"selecionadas_{nome}")
+        if folhas_escolhidas:
+            tem_folhas_selecionadas = True
+            break
+    
+    if not tem_folhas_selecionadas:
+        flash("Por favor, selecione pelo menos uma folha para continuar.", "warning")  #Mensagem de aviso
+        #Recuperar informações das folhas para reexibir a página
+        folhas_por_ficheiro = {}
+        for nome in ficheiros_nomes:
+            caminho = os.path.join(UPLOAD_FOLDER, secure_filename(nome))
+            folhas = obter_folhas_excel(caminho)
+            folhas_por_ficheiro[nome] = folhas
+        return render_template("dashboard.html", folhas_por_ficheiro=folhas_por_ficheiro)
+    
+    #Se chegou aqui, tem folhas selecionadas, então limpa a sessão e continua
+    session.clear()
+    session.update(dados_sessao_manter)
+    
     dados_finais = []
 
     for nome in ficheiros_nomes:
@@ -220,8 +262,12 @@ def gerar_grafico():
     print(f"Coluna Y selecionada: {coluna_y}")
 
     if not tipos_graficos:
-        flash("Selecione pelo menos um tipo de gráfico.", "warning")
-        return redirect(url_for("rotas.dashboard"))
+        flash("Por favor, selecione pelo menos um tipo de gráfico para continuar.", "warning")
+        tabela_preview = df.to_html(classes='table table-striped', index=False)
+        return render_template("dashboard.html", 
+                            preview_html=tabela_preview,
+                            colunas_numericas=colunas_numericas,
+                            colunas_texto=colunas_texto)
 
     #Verificar se as colunas existem no DataFrame
     if coluna_x not in df.columns:
