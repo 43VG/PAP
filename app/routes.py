@@ -74,8 +74,8 @@ def painel():#Página principal protegida do utilizador
     return render_template("painel.html")  #Mostra o dashboard
 
 
-UPLOAD_FOLDER = "ficheiros_recebidos" #Pasta temporária onde os ficheiros vão ser guardados
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  #Garante que a pasta existe; se não existir, é criada
+PASTA_UPLOADS = "ficheiros_recebidos" #Pasta temporária onde os ficheiros vão ser guardados
+os.makedirs(PASTA_UPLOADS, exist_ok=True)  #Garante que a pasta existe; se não existir, é criada
 
 @rotas.route("/enviar_excel", methods=["POST"])
 @login_required
@@ -94,7 +94,7 @@ def enviar_excel():
         if ficheiro.filename.endswith((".xlsx", ".xls")):  #Verificar que é ficheiro Excel (.xlsx ou .xls)
             tem_excel = True
             nome_seguro = secure_filename(ficheiro.filename)  #Limpa o nome do ficheiro para evitar erros de segurança
-            caminho = os.path.join(UPLOAD_FOLDER, nome_seguro)  #Define o caminho onde o ficheiro será guardado
+            caminho = os.path.join(PASTA_UPLOADS, nome_seguro)  #Define o caminho onde o ficheiro será guardado
             ficheiro.save(caminho)  #Guarda o ficheiro localmente
 
             folhas = obter_folhas_excel(caminho)  #Usa função auxiliar para obter os nomes das folhas do Excel
@@ -141,7 +141,7 @@ def selecionar_folhas():
         #Recuperar informações das folhas para reexibir a página
         folhas_por_ficheiro = {}
         for nome in ficheiros_nomes:
-            caminho = os.path.join(UPLOAD_FOLDER, secure_filename(nome))
+            caminho = os.path.join(PASTA_UPLOADS, secure_filename(nome))
             folhas = obter_folhas_excel(caminho)
             folhas_por_ficheiro[nome] = folhas
         return render_template("painel.html", folhas_por_ficheiro=folhas_por_ficheiro)
@@ -154,7 +154,7 @@ def selecionar_folhas():
 
     for nome in ficheiros_nomes:
         folhas_escolhidas = request.form.getlist(f"selecionadas_{nome}")
-        caminho = os.path.join(UPLOAD_FOLDER, secure_filename(nome))
+        caminho = os.path.join(PASTA_UPLOADS, secure_filename(nome))
 
         if folhas_escolhidas:
             df = ler_folhas_selecionadas(caminho, folhas_escolhidas)
@@ -220,14 +220,14 @@ def selecionar_folhas():
         flash("Erro ao ler os dados selecionados.", "danger")
         return redirect(url_for("rotas.painel"))
 
-GRAPHS_FOLDER = "graficos_temp"
-os.makedirs(GRAPHS_FOLDER, exist_ok=True)
+PASTA_GRAFICOS = "graficos_temp"
+os.makedirs(PASTA_GRAFICOS, exist_ok=True)
 
 def limpar_pasta_graficos():
     """Limpa a pasta de gráficos temporários"""
-    if os.path.exists(GRAPHS_FOLDER):
-        shutil.rmtree(GRAPHS_FOLDER)
-        os.makedirs(GRAPHS_FOLDER)
+    if os.path.exists(PASTA_GRAFICOS):
+        shutil.rmtree(PASTA_GRAFICOS)
+        os.makedirs(PASTA_GRAFICOS)
 
 @rotas.route("/gerar_grafico", methods=["POST"])
 @login_required
@@ -315,7 +315,7 @@ def gerar_grafico():
         grafico_id = f"{tipo}_{session['contador_graficos']}"
         
         #Salvar o gráfico em arquivo
-        caminho_grafico = os.path.join(GRAPHS_FOLDER, f"{grafico_id}.json")
+        caminho_grafico = os.path.join(PASTA_GRAFICOS, f"{grafico_id}.json")
         with open(caminho_grafico, 'w') as f:
             json.dump(fig.to_json(), f)
         
@@ -338,7 +338,7 @@ def gerar_grafico():
     #Preparar gráficos anteriores
     graficos_anteriores = {}
     for k in session.get('graficos_anteriores', []):
-        caminho_grafico = os.path.join(GRAPHS_FOLDER, f"{k}.json")
+        caminho_grafico = os.path.join(PASTA_GRAFICOS, f"{k}.json")
         if os.path.exists(caminho_grafico):
             with open(caminho_grafico, 'r') as f:
                 dados_fig = json.load(f)
@@ -361,7 +361,7 @@ def gerar_grafico():
 @login_required
 def exportar_grafico(grafico_id, formato):
     import base64  #Import local para uso específico
-    caminho_grafico = os.path.join(GRAPHS_FOLDER, f"{grafico_id}.json")
+    caminho_grafico = os.path.join(PASTA_GRAFICOS, f"{grafico_id}.json")
     if not os.path.exists(caminho_grafico):
         flash("Gráfico não encontrado. Por favor, gere o gráfico novamente.", "danger")
         return redirect(url_for("rotas.painel"))
@@ -425,11 +425,11 @@ def voltar_selecao_folhas():
     folhas_por_ficheiro = {}
     
     #Recuperar os arquivos da pasta de uploads
-    if os.path.exists(UPLOAD_FOLDER):
-        for arquivo in os.listdir(UPLOAD_FOLDER):
+    if os.path.exists(PASTA_UPLOADS):
+        for arquivo in os.listdir(PASTA_UPLOADS):
             if arquivo.endswith(('.xlsx', '.xls')):
                 ficheiros_nomes.append(arquivo)
-                caminho = os.path.join(UPLOAD_FOLDER, arquivo)
+                caminho = os.path.join(PASTA_UPLOADS, arquivo)
                 folhas = obter_folhas_excel(caminho)
                 folhas_por_ficheiro[arquivo] = folhas
     
@@ -439,9 +439,9 @@ def voltar_selecao_folhas():
 @login_required
 def voltar_upload():
     #Limpar arquivos temporários
-    if os.path.exists(UPLOAD_FOLDER):
-        for arquivo in os.listdir(UPLOAD_FOLDER):
-            caminho = os.path.join(UPLOAD_FOLDER, arquivo)
+    if os.path.exists(PASTA_UPLOADS):
+        for arquivo in os.listdir(PASTA_UPLOADS):
+            caminho = os.path.join(PASTA_UPLOADS, arquivo)
             try:
                 if os.path.isfile(caminho):
                     os.remove(caminho)
