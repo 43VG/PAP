@@ -58,3 +58,29 @@ form {                    /* Formulários */
 form div {                /* Cada campo do formulário */
     margin-bottom: 15px;          /* Margem */
 }
+
+/* Classes de ícones personalizadas */
+.icone-grafico-linha::before { content: "\f201"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-grafico-barras::before { content: "\f080"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-grafico-pizza::before { content: "\f200"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-info::before { content: "\f05a"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-sair::before { content: "\f2f5"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-usuario::before { content: "\f007"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-entrar::before { content: "\f2f6"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-novo-usuario::before { content: "\f234"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-download::before { content: "\f019"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-pdf::before { content: "\f1c1"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-upload::before { content: "\f093"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-check::before { content: "\f00c"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-lixo::before { content: "\f2ed"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-mais::before { content: "\f067"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+
+/* Classes de margem */
+.margem-dir-1 { margin-right: 0.25rem; }
+.margem-dir-2 { margin-right: 0.5rem; }
+
+/* Otimizações adicionais */
+.welcome-text { display: flex; align-items: center; }
+.card-header { padding: 1rem; }
+.table-responsive { margin-bottom: 0; }
+.btn-icon { display: inline-flex; align-items: center; }

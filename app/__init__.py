@@ -6,7 +6,7 @@ from flask_login import LoginManager  #Importa LoginManager para gerir sessões 
 db = SQLAlchemy()  #Objeto da base de dados
 bcrypt = Bcrypt()  #Objeto para encriptação de senhas
 login_manager = LoginManager()  #Gestor de sessões de utilizadores
-login_manager.login_view = "rotas.homepage"  #Define a página para onde o utilizador será redirecionado se não estiver autenticado
+login_manager.login_view = "rotas.pagina_inicial"  #Define a página para onde o utilizador será redirecionado se não estiver autenticado
 login_manager.login_message_category = "info"  #Define o estilo da mensagem flash que aparece quando o login é exigido
 
 def criar_app():  #Função que cria e configura a aplicação Flask

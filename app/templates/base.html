@@ -4,129 +4,98 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block titulo %}Análise de Dados{% endblock %}</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <!-- Navbar moderna -->
+    <!-- Menu Principal -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('rotas.dashboard' if current_user.is_authenticated else 'rotas.homepage') }}">
+            <a class="navbar-brand" href="{{ url_for('rotas.painel' if current_user.is_authenticated else 'rotas.pagina_inicial') }}">
                 <i class="icone-grafico-linha margem-dir-2"></i>Análise de Dados
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto d-flex flex-row gap-3">
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('rotas.dashboard') }}">
-                                <i class="icone-grafico-barras margem-dir-1"></i>Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#sobreModal">
-                                <i class="icone-info margem-dir-1"></i>Sobre
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('rotas.logout') }}">
-                                <i class="icone-sair margem-dir-1"></i>Sair
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <span class="nav-link text-light">
-                                <i class="icone-usuario margem-dir-1"></i>{{ current_user.nome }}
-                            </span>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('rotas.painel') }}">
+                            <i class="icone-grafico-barras margem-dir-1"></i>Painel
+                        </a></li>
+                        <li class="nav-item"><a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#sobreModal">
+                            <i class="icone-info margem-dir-1"></i>Sobre
+                        </a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('rotas.sair') }}">
+                            <i class="icone-sair margem-dir-1"></i>Sair
+                        </a></li>
+                        <li class="nav-item"><span class="nav-link text-light">
+                            <i class="icone-usuario margem-dir-1"></i>{{ current_user.nome }}
+                        </span></li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('rotas.login') }}">
-                                <i class="icone-entrar margem-dir-1"></i>Entrar
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('rotas.criarconta') }}">
-                                <i class="icone-novo-usuario margem-dir-1"></i>Criar Conta
-                            </a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('rotas.login') }}">
+                            <i class="icone-entrar margem-dir-1"></i>Entrar
+                        </a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('rotas.criar_conta') }}">
+                            <i class="icone-novo-usuario margem-dir-1"></i>Criar Conta
+                        </a></li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Modal Sobre -->
-    <div class="modal fade" id="sobreModal" tabindex="-1">
+    <!-- Janela Sobre -->
+    <div class="modal fade" id="sobreModal"> <!-- modal é necessário para o Bootstrap -->
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Sobre o Site</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+                <h5 class="modal-header">Sobre o Site</h5>
+                
+                <!-- Conteúdo do Modal -->
                 <div class="modal-body">
-                    <h6 class="mb-3">Apoio visual de Dados Excel</h6>
-                    
-                    <p class="mb-4">Este site foi desenvolvido para tornar a análise de dados do Excel mais simples e visual. Com ele, pode transformar as suas planilhas em gráficos interativos com poucos cliques.</p>
+                    <h6>Apoio visual de Dados Excel</h6>
+                    <p>Este site foi desenvolvido para tornar a análise de dados do Excel mais simples e visual. Com ele, pode transformar as suas planilhas em gráficos interativos com poucos cliques.</p>
 
-                    <h6 class="mb-2">O que pode fazer:</h6>
-                    <ul class="list-group list-group-flush mb-4">
-                        <li class="list-group-item">
-                            <i class="icone-upload margem-dir-1"></i>
-                            Carregar múltiplos arquivos Excel
-                        </li>
-                        <li class="list-group-item">
-                            <i class="icone-check margem-dir-1"></i>
-                            Escolher que folhas deseja analisar
-                        </li>
-                        <li class="list-group-item">
-                            <i class="icone-grafico-barras margem-dir-1"></i>
-                            Criar gráficos de Barras, Linhas e Pizza
-                        </li>
-                        <li class="list-group-item">
-                            <i class="icone-download margem-dir-1"></i>
-                            Exportar gráficos em PNG e PDF
-                        </li>
-                        <li class="list-group-item">
-                            <i class="icone-grafico-linha margem-dir-1"></i>
-                            Visualizar dados de forma interativa
-                        </li>
+                    <h6>O que pode fazer:</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item"><i class="icone-upload margem-dir-1"></i>Carregar múltiplos arquivos Excel</li>
+                        <li class="list-group-item"><i class="icone-check margem-dir-1"></i>Escolher que folhas deseja analisar</li>
+                        <li class="list-group-item"><i class="icone-grafico-barras margem-dir-1"></i>Criar gráficos de Barras, Linhas e Pizza</li>
+                        <li class="list-group-item"><i class="icone-download margem-dir-1"></i>Exportar gráficos em PNG e PDF</li>
+                        <li class="list-group-item"><i class="icone-grafico-linha margem-dir-1"></i>Visualizar dados de forma interativa</li>
                     </ul>
 
-                    <p class="mb-0 text-muted">
-                        <small>
-                            <i class="icone-info margem-dir-1"></i>
-                            Para começar, faça login ou crie uma conta e acesse o Dashboard.
-                        </small>
+                    <p class="text-muted">
+                        <small><i class="icone-info margem-dir-1"></i>Para começar, faça login ou crie uma conta e acesse o Painel.</small>
                     </p>
                 </div>
+                
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container">
+    <!-- Área Principal -->
+    <main class="container"> <!-- container necessário para o Bootstrap -->
+        <!-- Mensagens de Sistema -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    <p class="alert alert-{{ category }}">
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                        <button class="btn-close" data-bs-dismiss="alert"></button>
+                    </p>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
+        <!-- Conteúdo da Página -->
         {% block content %}{% endblock %}
-    </div>
+    </main>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
