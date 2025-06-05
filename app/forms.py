@@ -11,25 +11,13 @@ class FormularioLogin(FlaskForm):  #Formulário usado para o login
 
 
 class FormularioCriarConta(FlaskForm):  #Formulário usado para criar nova conta
-    nome = StringField('Nome', validators=[
-        DataRequired(message="Por favor, insira seu nome."),
-        Length(min=2, max=20, message="O nome deve ter entre 2 e 20 caracteres.")
-    ])
-    email = StringField('Email', validators=[
-        DataRequired(message="Por favor, insira seu email."),
-        Email(message="Por favor, insira um endereço de email válido.")
-    ])
-    senha = PasswordField('Senha', validators=[
-        DataRequired(message="Por favor, insira uma senha."),
-        Length(min=6, message="A senha deve ter pelo menos 6 caracteres.")
-    ])
-    confirmar_senha = PasswordField('Confirmar Senha', validators=[
-        DataRequired(message="Por favor, confirme sua senha."),
-        EqualTo('senha', message="As senhas não coincidem.")
-    ])
+    nome = StringField('Nome', validators=[DataRequired(message="Por favor, insira o seu nome."), Length(min=2, max=20, message="O nome deve ter entre 2 e 20 caracteres.")])
+    email = StringField('Email', validators=[DataRequired(message="Por favor, insira o seu email."), Email(message="Por favor, insira um endereço de email válido.")])
+    senha = PasswordField('Senha', validators=[DataRequired(message="Por favor, insira uma senha."), Length(min=6, message="A senha deve ter pelo menos 6 caracteres.")])
+    confirmar_senha = PasswordField('Confirmar Senha', validators=[DataRequired(message="Por favor, confirme sua senha."), EqualTo('senha', message="As senhas não coincidem.")])
     submeter = SubmitField('Criar Conta')
 
-    def validate_email(self, email):  #Validação personalizada para garantir que o email ainda não existe na base de dados
+    def validar_email(self, email):  #Validação para garantir que o email ainda não existe na base de dados
         utilizador = Utilizador.query.filter_by(email=email.data).first()  #Procura utilizador com o mesmo email
         if utilizador:  #Se já existir um utilizador com este email
             raise ValidationError('Este email já está registado. Por favor, escolha outro.')  #Mostra mensagem de erro

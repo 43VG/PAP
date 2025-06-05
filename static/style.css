@@ -74,6 +74,8 @@ form div {                /* Cada campo do formulário */
 .icone-check::before { content: "\f00c"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
 .icone-lixo::before { content: "\f2ed"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
 .icone-mais::before { content: "\f067"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-topo::before { content: "\f062"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+.icone-baixo::before { content: "\f063"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
 
 /* Classes de margem */
 .margem-dir-1 { margin-right: 0.25rem; }
@@ -84,3 +86,6 @@ form div {                /* Cada campo do formulário */
 .card-header { padding: 1rem; }
 .table-responsive { margin-bottom: 0; }
 .btn-icon { display: inline-flex; align-items: center; }
+
+
+

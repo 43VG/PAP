@@ -109,31 +109,38 @@
         </div>
     </div>
 
-    <!-- Gráficos Recém-Criados -->
-    {% if graficos %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h2 class="h5 mb-0">Gráficos Recém-Criados</h2>
-        </div>
-        <div class="card-body">
-            {% for grafico_id, grafico_info in graficos.items() %}
-                <div class="mb-4">
-                    <h3 class="h6">Gráfico de {{ grafico_info.tipo }}</h3>
-                    <p class="text-muted">{{ grafico_info.coluna_y }} por {{ grafico_info.coluna_x }}</p>
-                    {{ grafico_info.html|safe }}
-                    <div class="mt-2">
-                        <a href="{{ url_for('rotas.exportar_grafico', grafico_id=grafico_id, formato='png') }}" class="btn btn-sm btn-secondary">
-                            <i class="icone-download margem-dir-1"></i>PNG
-                        </a>
-                        <a href="{{ url_for('rotas.exportar_grafico', grafico_id=grafico_id, formato='pdf') }}" class="btn btn-sm btn-secondary">
-                            <i class="icone-pdf margem-dir-1"></i>PDF
-                        </a>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+<!-- Gráficos Recém-Criados -->
+{% if graficos %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Gráficos Recém-Criados</h2>
     </div>
-    {% endif %}
+    <div class="card-body">
+        {% for grafico_id, grafico_info in graficos.items() %}
+            <div class="mb-4">
+                <h3 class="h6">Gráfico de {{ grafico_info.tipo }}</h3>
+                <p class="text-muted">{{ grafico_info.coluna_y }} por {{ grafico_info.coluna_x }}</p>
+                {{ grafico_info.html|safe }}
+                <div class="mt-2">
+                    <a href="{{ url_for('rotas.exportar_grafico', grafico_id=grafico_id, formato='png') }}" class="btn btn-sm btn-secondary">
+                        <i class="icone-download margem-dir-1"></i>PNG
+                    </a>
+                    <a href="{{ url_for('rotas.exportar_grafico', grafico_id=grafico_id, formato='pdf') }}" class="btn btn-sm btn-secondary">
+                        <i class="icone-pdf margem-dir-1"></i>PDF
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Script de scroll automático para baixo -->
+<script>
+    window.onload = function() {
+        window.scrollTo(0, document.body.scrollHeight);
+    };
+</script>
+{% endif %}
 
 {% else %}
     <!-- Upload de Arquivos -->
@@ -154,6 +161,7 @@
         </div>
     </div>
 {% endif %}
+
 
 <!-- Seleção de Folhas -->
 {% if folhas_por_ficheiro %}
@@ -189,4 +197,49 @@
         </div>
     </div>
 {% endif %}
+
+{% if request.path == '/gerar_grafico' %}
+<!-- Botão para ir para baixo -->
+<button onclick="irParaBaixo()" id="btn-baixo" 
+        class="btn btn-primary rounded-pill shadow" 
+        style="display: none; position: fixed; top: 80px; right: 25px; z-index: 99;" 
+        title="Ir para baixo">
+    <i class="icone-baixo margem-dir-1"></i>Ir para o fim
+</button>
+
+<!-- Botão para ir para o fim -->
+<button onclick="voltarTopo()" id="btn-topo" 
+        class="btn btn-primary rounded-pill shadow" 
+        style="display: none; position: fixed; bottom: 20px; right: 25px; z-index: 99;" 
+        title="ir para o fim">
+    <i class="icone-topo margem-dir-1"></i>Ir para o topo
+</button>
+        
+<!-- JS para scroll suave -->
+<script>
+    // Mostra/esconde os botões conforme o scroll
+    window.onscroll = function() {
+        const botaoTopo = document.getElementById("btn-topo");
+        const botaoBaixo = document.getElementById("btn-baixo");
+        const scrollTop = document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight;
+        const clientHeight = document.documentElement.clientHeight;
+        
+        // Botão para ir para o fim 
+        botaoTopo.style.display = (scrollTop > 300) ? "block" : "none";
+        
+        // Botão para ir para baixo 
+        botaoBaixo.style.display = (scrollTop < 100 && scrollHeight > clientHeight + 500) ? "block" : "none";
+    };
+     
+    function voltarTopo() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function irParaBaixo() {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    }
+</script>
+{% endif %}
+
 {% endblock %}

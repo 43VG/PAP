@@ -19,16 +19,16 @@ rotas = Blueprint('rotas', __name__) #Cria um conjunto de rotas com o nome "rota
 @rotas.route("/", methods=["GET", "POST"])
 def pagina_inicial(): #Página inicial do site (login direto se já estiver autenticado)
     if current_user.is_authenticated:
-        return redirect(url_for("rotas.painel"))  #Vai direto ao dashboard se já estiver logado
+        return redirect(url_for("rotas.painel"))  #Vai direto ao painel se já estiver logado
     formulario = FormularioLogin()  #Cria formulário de login
     if formulario.validate_on_submit():  #Se o formulário for submetido e for válido
         utilizador = Utilizador.query.filter_by(email=formulario.email.data).first()  #Procura utilizador pelo e-mail
         if utilizador and bcrypt.check_password_hash(utilizador.senha, formulario.senha.data):  #Verifica se a senha está correta
             login_user(utilizador)  #Faz login do utilizador
-            return redirect(url_for("rotas.painel"))  #Vai para o dashboard
+            return redirect(url_for("rotas.painel"))  #Vai para o painel
         else:
             flash("Email ou senha incorretos. Por favor, tente novamente.", "danger")  #Mostra mensagem de erro
-    return render_template("pagina_inicial.html", formulario=formulario)  #Mostra a homepage com o formulário
+    return render_template("pagina_inicial.html", formulario=formulario)  #Mostra a painel com o formulário
 
 @rotas.route("/criarconta", methods=["GET", "POST"])
 def criar_conta():
@@ -48,16 +48,16 @@ def criar_conta():
 
 @rotas.route("/login", methods=["GET", "POST"])
 def login():
-    #Página de login (igual à homepage, mas separada)
+    #Página de login (igual ao painel, mas separada)
     if current_user.is_authenticated:
-        return redirect(url_for("rotas.painel"))  #Se já estiver logado, vai para o dashboard
+        return redirect(url_for("rotas.painel"))  #Se já estiver logado, vai para o painel
     formulario = FormularioLogin()  #Cria formulário de login
     if formulario.validate_on_submit():  #Se o formulário for válido
         utilizador = Utilizador.query.filter_by(email=formulario.email.data).first()  #Procura utilizador
         if utilizador and bcrypt.check_password_hash(utilizador.senha, formulario.senha.data):  
             #Verifica senha
             login_user(utilizador)  #Faz login
-            return redirect(url_for("rotas.painel"))  #Vai para o dashboard
+            return redirect(url_for("rotas.painel"))  #Vai para o painel
         else:
             flash("Email ou senha incorretos. Por favor, tente novamente.", "danger")  #Mensagem de erro
     return render_template("login.html", formulario=formulario)  #Mostra o formulário
@@ -66,12 +66,12 @@ def login():
 @login_required
 def sair(): #Página para fazer logout (só acessível se estiver logado)
     logout_user()  #Termina a sessão
-    return redirect(url_for("rotas.pagina_inicial"))  #Vai para a homepage
+    return redirect(url_for("rotas.pagina_inicial"))  #Vai para o painel
 
 @rotas.route("/painel")
 @login_required  
 def painel():#Página principal protegida do utilizador
-    return render_template("painel.html")  #Mostra o dashboard
+    return render_template("painel.html")  #Mostra o painel
 
 
 PASTA_UPLOADS = "ficheiros_recebidos" #Pasta temporária onde os ficheiros vão ser guardados
@@ -85,10 +85,10 @@ def enviar_excel():
 
     if not ficheiros_recebidos:
         flash("Nenhum ficheiro foi enviado.", "danger")  #Mostra mensagem de erro se nenhum ficheiro for enviado
-        return redirect(url_for("rotas.painel"))  #Redireciona de volta ao dashboard
+        return redirect(url_for("rotas.painel"))  #Redireciona de volta ao painel
 
     arquivos_invalidos = []  #Lista para guardar nomes dos arquivos inválidos
-    tem_excel = False  #Flag para verificar se pelo menos um arquivo Excel foi enviado
+    tem_excel = False #Mecanismo de segurança que garante que o utilizador faça o upload antes de tentar gerar gráficos
 
     for ficheiro in ficheiros_recebidos:
         if ficheiro.filename.endswith((".xlsx", ".xls")):  #Verificar que é ficheiro Excel (.xlsx ou .xls)
@@ -110,13 +110,13 @@ def enviar_excel():
     if arquivos_invalidos:
         flash(f"Os seguintes arquivos não são Excel válidos: {', '.join(arquivos_invalidos)}", "warning")  #Mostra mensagem com lista de arquivos inválidos
         if not tem_excel:
-            return redirect(url_for("rotas.painel"))  #Volta ao dashboard se não houver nenhum Excel válido
+            return redirect(url_for("rotas.painel"))  #Volta ao painel se não houver nenhum Excel válido
 
     if not folhas_por_ficheiro:
         flash("Nenhum arquivo Excel válido foi enviado.", "danger")  #Mensagem se nenhum Excel válido foi processado
-        return redirect(url_for("rotas.painel"))  #Volta ao dashboard
+        return redirect(url_for("rotas.painel"))  #Volta ao painel
 
-    return render_template("painel.html", folhas_por_ficheiro=folhas_por_ficheiro)  #Mostra a seleção de folhas no dashboard
+    return render_template("painel.html", folhas_por_ficheiro=folhas_por_ficheiro)  #Mostra a seleção de folhas no painel
 
 
 @rotas.route("/selecionar_folhas", methods=["POST"])
@@ -127,7 +127,7 @@ def selecionar_folhas():
     dados_sessao_manter = {chave: session[chave] for chave in chaves_sessao_manter if chave in session}
     
     ficheiros_nomes = request.form.getlist("ficheiros_nome")
-    tem_folhas_selecionadas = False  #Flag para verificar se alguma folha foi selecionada
+    tem_folhas_selecionadas = False  #Mecanismo de segurança que garante que não há folhas selecionadas antes de processar os dados
     
     #Verificar se pelo menos uma folha foi selecionada
     for nome in ficheiros_nomes:
@@ -168,9 +168,7 @@ def selecionar_folhas():
     
     if dados_finais:
         df_total = pd.concat(dados_finais, ignore_index=True)
-        
-        #Debug: mostrar estado dos dados antes de processar
-        print("\nColunas antes do processamento:", df_total.columns.tolist())
+        print("\nColunas antes do processamento:", df_total.columns.tolist()) #Depuração: mostrar estado dos dados antes de processar
         
         #Identificar colunas numéricas e de texto
         colunas_invalidas = ["Ficheiro", "Folha"]
@@ -178,8 +176,7 @@ def selecionar_folhas():
 
         #Forçar a detecção correta dos tipos de dados
         for coluna in df_graficos.columns:
-            #Converter datas para o formato correto
-            if 'Data' in coluna:
+            if 'Data' in coluna: #Converter datas para o formato correto
                 try:
                     df_graficos[coluna] = pd.to_datetime(df_graficos[coluna])
                 except:
@@ -195,11 +192,11 @@ def selecionar_folhas():
         colunas_numericas = df_graficos.select_dtypes(include=['int64', 'float64']).columns.tolist()
         colunas_texto = df_graficos.select_dtypes(include=['object', 'datetime64[ns]']).columns.tolist()
         
-        #Debug: mostrar estado final dos dados
+        #Depuração: mostrar estado final dos dados
         print("\nColunas numéricas:", colunas_numericas)
         print("Colunas texto:", colunas_texto)
         
-        #Converter datas para string antes de salvar na sessão
+        #Converter datas para string antes de guardar na sessão
         for coluna in df_graficos.columns:
             if pd.api.types.is_datetime64_any_dtype(df_graficos[coluna]):
                 df_graficos[coluna] = df_graficos[coluna].dt.strftime('%Y-%m-%d')
@@ -220,8 +217,8 @@ def selecionar_folhas():
         flash("Erro ao ler os dados selecionados.", "danger")
         return redirect(url_for("rotas.painel"))
 
-PASTA_GRAFICOS = "graficos_temp"
-os.makedirs(PASTA_GRAFICOS, exist_ok=True)
+PASTA_GRAFICOS = "graficos_temp"  #Pasta temporária onde os gráficos vão ser guardados
+os.makedirs(PASTA_GRAFICOS, exist_ok=True)  #Garante que a pasta existe; se não existir, é criada
 
 def limpar_pasta_graficos():
     """Limpa a pasta de gráficos temporários"""
@@ -241,13 +238,11 @@ def gerar_grafico():
     colunas_numericas = session.get('colunas_numericas', [])
     colunas_texto = session.get('colunas_texto', [])
     
-    #Garantir que os nomes das colunas estão normalizados
-    df.columns = df.columns.str.strip().str.replace(' ', '_')
+    df.columns = df.columns.str.strip().str.replace(' ', '_') #Garantir que os nomes das colunas estão normalizados
     
-    #Debug: imprimir colunas disponíveis
-    print("Colunas no DataFrame:", df.columns.tolist())
+    print("Colunas no DataFrame:", df.columns.tolist()) #Depuração: imprimir colunas disponíveis
     
-    #Inicializar ou resetar contadores e listas se necessário
+    #Inicializar ou reiniciar contadores e listas se necessário
     if 'contador_graficos' not in session:
         session['contador_graficos'] = 0
     if 'lista_graficos' not in session:
@@ -314,12 +309,12 @@ def gerar_grafico():
         #Gerar ID único para o gráfico
         grafico_id = f"{tipo}_{session['contador_graficos']}"
         
-        #Salvar o gráfico em arquivo
+        #guardar o gráfico em arquivo
         caminho_grafico = os.path.join(PASTA_GRAFICOS, f"{grafico_id}.json")
         with open(caminho_grafico, 'w') as f:
             json.dump(fig.to_json(), f)
         
-        #Converter para HTML e salvar apenas metadados na sessão
+        #Converter para HTML e guardar apenas metadados na sessão
         html = fig.to_html(full_html=False, include_plotlyjs=True)
         graficos[grafico_id] = {
             'html': html,

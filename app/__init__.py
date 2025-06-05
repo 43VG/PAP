@@ -7,10 +7,10 @@ db = SQLAlchemy()  #Objeto da base de dados
 bcrypt = Bcrypt()  #Objeto para encriptação de senhas
 login_manager = LoginManager()  #Gestor de sessões de utilizadores
 login_manager.login_view = "rotas.pagina_inicial"  #Define a página para onde o utilizador será redirecionado se não estiver autenticado
-login_manager.login_message_category = "info"  #Define o estilo da mensagem flash que aparece quando o login é exigido
+login_manager.login_message_category = "info"  #Define o estilo da mensagem flash (aviso) que aparece quando o login é exigido
 
 def criar_app():  #Função que cria e configura a aplicação Flask
-    print("A criar app...")  #Mensagem de debug no terminal
+    print("A criar app...")  #Mensagem de depuração no terminal
 
     app = Flask(__name__)  #Cria a instância principal da aplicação
     app.config["SECRET_KEY"] = "97G8MSGSIUDFHA68S"  #Define a chave secreta (usada para sessões e segurança)
@@ -23,5 +23,5 @@ def criar_app():  #Função que cria e configura a aplicação Flask
     from app.routes import rotas  #Importa as rotas definidas no ficheiro routes.py
     app.register_blueprint(rotas)  #Blueprint regista rotas 
 
-    print("App criada com sucesso!")  #Mensagem de sucesso no terminal
+    print("App criada com sucesso!")  #Mensagem de depuração
     return app  #Devolve a aplicação pronta a ser usada
