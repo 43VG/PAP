@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Criar Conta</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ formulario.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ formulario.nome.label(class="form-label") }}
+                        {{ formulario.nome(class="form-control") }}
+                        {% if formulario.nome.errors %}
+                            {% for erro in formulario.nome.errors %}
+                                <div class="alert alert-danger">{{ erro }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ formulario.email.label(class="form-label") }}
+                        {{ formulario.email(class="form-control") }}
+                        {% if formulario.email.errors %}
+                            {% for erro in formulario.email.errors %}
+                                <div class="alert alert-danger">{{ erro }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ formulario.senha.label(class="form-label") }}
+                        {{ formulario.senha(class="form-control") }}
+                        {% if formulario.senha.errors %}
+                            {% for erro in formulario.senha.errors %}
+                                <div class="alert alert-danger">{{ erro }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ formulario.confirmar_senha.label(class="form-label") }}
+                        {{ formulario.confirmar_senha(class="form-control") }}
+                        {% if formulario.confirmar_senha.errors %}
+                            {% for erro in formulario.confirmar_senha.errors %}
+                                <div class="alert alert-danger">{{ erro }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    {{ formulario.submeter(class="btn btn-primary") }}
+                </form>
+                <hr>
+                <p>Já tem uma conta? <a href="{{ url_for('rotas.login') }}">Entrar</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}  

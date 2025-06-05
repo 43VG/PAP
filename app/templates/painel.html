@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Título e Boas-vindas -->
+<h1 class="h3 mb-4">Painel</h1>
+{% if current_user.is_authenticated %}
+    <p class="welcome-text mb-4">
+        <i class="icone-grafico-pizza margem-dir-2"></i>Bem-vindo(a) à sua área de análise de dados
+    </p>
+{% endif %}
+
+{% if preview_html %}
+    <!-- Área de Preview -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0">Preview dos dados selecionados</h2>
+            <form action="{{ url_for('rotas.voltar_selecao_folhas') }}" method="post">
+                <button class="btn btn-secondary">
+                    <i class="icone-voltar margem-dir-1"></i>Voltar
+                </button>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                {{ preview_html|safe }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos Anteriores -->
+    {% if graficos_anteriores %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Gráficos Anteriores</h2>
+        </div>
+        <div class="card-body">
+            {% for grafico_id, grafico_html in graficos_anteriores.items() %}
+                <div class="mb-4">
+                    {{ grafico_html|safe }}
+                    <div class="mt-2">
+                        <a href="{{ url_for('rotas.exportar_grafico', grafico_id=grafico_id, formato='png') }}" class="btn btn-sm btn-secondary">
+                            <i class="icone-download margem-dir-1"></i>PNG
+                        </a>
+                        <a href="{{ url_for('rotas.exportar_grafico', grafico_id=grafico_id, formato='pdf') }}" class="btn btn-sm btn-secondary">
+                            <i class="icone-pdf margem-dir-1"></i>PDF
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Criar Novo Gráfico -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0">Criar Novo Gráfico</h2>
+            {% if graficos_anteriores %}
+                <form action="{{ url_for('rotas.limpar_graficos') }}" method="post">
+                    <button class="btn btn-danger btn-sm">
+                        <i class="icone-lixo margem-dir-1"></i>Limpar Gráficos
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('rotas.gerar_grafico') }}" method="post">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="coluna_x" class="form-label">Coluna X (Texto):</label>
+                        <select name="coluna_x" id="coluna_x" class="form-select" required>
+                            {% for coluna in colunas_texto %}
+                                <option value="{{ coluna }}">{{ coluna.replace('_', ' ') }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="coluna_y" class="form-label">Coluna Y (Numérica):</label>
+                        <select name="coluna_y" id="coluna_y" class="form-select" required>
+                            {% for coluna in colunas_numericas %}
+                                <option value="{{ coluna }}">{{ coluna.replace('_', ' ') }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Tipos de Gráficos:</label>
+                    <div class="d-flex gap-3">
+                        <label class="form-check">
+                            <input type="checkbox" name="tipos_graficos" value="Barras" class="form-check-input">
+                            <i class="icone-grafico-barras margem-dir-1"></i>Barras
+                        </label>
+                        <label class="form-check">
+                            <input type="checkbox" name="tipos_graficos" value="Linhas" class="form-check-input">
+                            <i class="icone-grafico-linha margem-dir-1"></i>Linhas
+                        </label>
+                        <label class="form-check">
+                            <input type="checkbox" name="tipos_graficos" value="Pizza" class="form-check-input">
+                            <i class="icone-grafico-pizza margem-dir-1"></i>Pizza
+                        </label>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary">
+                    <i class="icone-mais margem-dir-1"></i>Criar Gráfico
+                </button>
+            </form>
+        </div>
+    </div>
+
+<!-- Gráficos Recém-Criados -->
+{% if graficos %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="h5 mb-0">Gráficos Recém-Criados</h2>
+    </div>
+    <div class="card-body">
+        {% for grafico_id, grafico_info in graficos.items() %}
+            <div class="mb-4">
+                <h3 class="h6">Gráfico de {{ grafico_info.tipo }}</h3>
+                <p class="text-muted">{{ grafico_info.coluna_y }} por {{ grafico_info.coluna_x }}</p>
+                {{ grafico_info.html|safe }}
+                <div class="mt-2">
+                    <a href="{{ url_for('rotas.exportar_grafico', grafico_id=grafico_id, formato='png') }}" class="btn btn-sm btn-secondary">
+                        <i class="icone-download margem-dir-1"></i>PNG
+                    </a>
+                    <a href="{{ url_for('rotas.exportar_grafico', grafico_id=grafico_id, formato='pdf') }}" class="btn btn-sm btn-secondary">
+                        <i class="icone-pdf margem-dir-1"></i>PDF
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Script de scroll automático para baixo -->
+<script>
+    window.onload = function() {
+        window.scrollTo(0, document.body.scrollHeight);
+    };
+</script>
+{% endif %}
+
+{% else %}
+    <!-- Upload de Arquivos -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Upload de Arquivos Excel</h2>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('rotas.enviar_excel') }}" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="ficheiros" class="form-label">Selecione os arquivos Excel:</label>
+                    <input type="file" name="ficheiros" id="ficheiros" class="form-control" multiple accept=".xlsx,.xls">
+                </div>
+                <button class="btn btn-primary">
+                    <i class="icone-upload margem-dir-1"></i>Enviar
+                </button>
+            </form>
+        </div>
+    </div>
+{% endif %}
+
+
+<!-- Seleção de Folhas -->
+{% if folhas_por_ficheiro %}
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0">Selecionar Folhas</h2>
+            <form action="{{ url_for('rotas.voltar_upload') }}" method="post">
+                <button class="btn btn-secondary">
+                    <i class="icone-voltar margem-dir-1"></i>Voltar
+                </button>
+            </form>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('rotas.selecionar_folhas') }}" method="post">
+                {% for arquivo, folhas in folhas_por_ficheiro.items() %}
+                    <input type="hidden" name="ficheiros_nome" value="{{ arquivo }}">
+                    <div class="mb-4">
+                        <h3 class="h6">{{ arquivo }}</h3>
+                        {% for folha in folhas %}
+                            <div class="form-check">
+                                <input type="checkbox" name="selecionadas_{{ arquivo }}" value="{{ folha }}" class="form-check-input" id="{{ arquivo }}_{{ folha }}">
+                                <label class="form-check-label" for="{{ arquivo }}_{{ folha }}">
+                                    {{ folha }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                <button class="btn btn-primary">
+                    <i class="icone-check margem-dir-1"></i>Confirmar
+                </button>
+            </form>
+        </div>
+    </div>
+{% endif %}
+
+{% if request.path == '/gerar_grafico' %}
+<!-- Botão para ir para baixo -->
+<button onclick="irParaBaixo()" id="btn-baixo" 
+        class="btn btn-primary rounded-pill shadow" 
+        style="display: none; position: fixed; top: 80px; right: 25px; z-index: 99;" 
+        title="Ir para baixo">
+    <i class="icone-baixo margem-dir-1"></i>Ir para o fim
+</button>
+
+<!-- Botão para ir para o fim -->
+<button onclick="voltarTopo()" id="btn-topo" 
+        class="btn btn-primary rounded-pill shadow" 
+        style="display: none; position: fixed; bottom: 20px; right: 25px; z-index: 99;" 
+        title="ir para o fim">
+    <i class="icone-topo margem-dir-1"></i>Ir para o topo
+</button>
+        
+<!-- JS para scroll suave -->
+<script>
+    // Mostra/esconde os botões conforme o scroll
+    window.onscroll = function() {
+        const botaoTopo = document.getElementById("btn-topo");
+        const botaoBaixo = document.getElementById("btn-baixo");
+        const scrollTop = document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight;
+        const clientHeight = document.documentElement.clientHeight;
+        
+        // Botão para ir para o fim 
+        botaoTopo.style.display = (scrollTop > 300) ? "block" : "none";
+        
+        // Botão para ir para baixo 
+        botaoBaixo.style.display = (scrollTop < 100 && scrollHeight > clientHeight + 500) ? "block" : "none";
+    };
+     
+    function voltarTopo() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function irParaBaixo() {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    }
+</script>
+{% endif %}
+
+{% endblock %}
