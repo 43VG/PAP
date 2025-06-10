@@ -10,10 +10,10 @@
 {% endif %}
 
 {% if preview_html %}
-    <!-- Área de Preview -->
+    <!-- Área de Preview (pré-visualização)-->
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h2 class="h5 mb-0">Preview dos dados selecionados</h2>
+            <h2 class="h5 mb-0">Pré-visualização dos dados selecionados</h2>
             <form action="{{ url_for('rotas.voltar_selecao_folhas') }}" method="post">
                 <button class="btn btn-secondary">
                     <i class="icone-voltar margem-dir-1"></i>Voltar
@@ -199,7 +199,7 @@
 {% endif %}
 
 {% if request.path == '/gerar_grafico' %}
-<!-- Botão para ir para baixo -->
+<!-- Botão para ir para o fim -->
 <button onclick="irParaBaixo()" id="btn-baixo" 
         class="btn btn-primary rounded-pill shadow" 
         style="display: none; position: fixed; top: 80px; right: 25px; z-index: 99;" 
@@ -207,11 +207,11 @@
     <i class="icone-baixo margem-dir-1"></i>Ir para o fim
 </button>
 
-<!-- Botão para ir para o fim -->
+<!-- Botão para Ir para o topo -->
 <button onclick="voltarTopo()" id="btn-topo" 
         class="btn btn-primary rounded-pill shadow" 
         style="display: none; position: fixed; bottom: 20px; right: 25px; z-index: 99;" 
-        title="ir para o fim">
+        title="Ir para o topo">
     <i class="icone-topo margem-dir-1"></i>Ir para o topo
 </button>
         

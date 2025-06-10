@@ -7,10 +7,7 @@ with app.app_context():  #Cria um contexto da aplicação (necessário para aced
     db.create_all()  #Cria as tabelas da base de dados com base nos modelos definidos (ex: Utilizador)
 
 if __name__ == "__main__":  #Verifica se o ficheiro está a ser executado diretamente 
-    app.run(debug=True)  #Inicia o servidor Flask em modo de depuração 
+    app.run(debug=False)  #Inicia o servidor Flask 
 
 with app.app_context():  #Abre novamente o contexto da app
     print(Utilizador.query.all())  #Mostra no terminal todos os utilizadores registados na base de dados (para depuração)
-
-def home():
-    return render_template('base.html')
