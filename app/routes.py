@@ -355,7 +355,6 @@ def gerar_grafico():
 @rotas.route("/exportar_grafico/<grafico_id>/<formato>")
 @login_required
 def exportar_grafico(grafico_id, formato):
-    import base64  #Import local para uso específico
     caminho_grafico = os.path.join(PASTA_GRAFICOS, f"{grafico_id}.json")
     if not os.path.exists(caminho_grafico):
         flash("Gráfico não encontrado. Por favor, gere o gráfico novamente.", "danger")
