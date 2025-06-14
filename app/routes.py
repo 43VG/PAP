@@ -396,19 +396,29 @@ def exportar_grafico(grafico_id, formato):
 @rotas.route("/limpar_graficos", methods=["POST"])
 @login_required
 def limpar_graficos():
-    #Limpar todos os gráficos da sessão e arquivos
+    # Limpar todos os gráficos da sessão e arquivos
     if 'lista_graficos' in session:
         session.pop('lista_graficos', None)
     
-    #Limpar as listas de gráficos recentes e anteriores
+    # Limpar as listas de gráficos recentes e anteriores
     session.pop('graficos_recentes', None)
     session.pop('graficos_anteriores', None)
     session.pop('contador_graficos', None)
     
-    #Limpar arquivos de gráficos
+    # Limpar arquivos de gráficos
     limpar_pasta_graficos()
     
     flash("Todos os gráficos foram limpos.", "success")
+    
+    # Recuperar dados da sessão para manter o preview
+    if 'dados_excel' in session:
+        df = pd.read_json(io.StringIO(session['dados_excel']))
+        tabela_preview = df.to_html(classes='table table-striped', index=False)
+        return render_template("painel.html",
+                            preview_html=tabela_preview,
+                            colunas_numericas=session.get('colunas_numericas', []),
+                            colunas_texto=session.get('colunas_texto', []))
+    
     return redirect(url_for("rotas.painel"))
 
 @rotas.route("/voltar_selecao_folhas", methods=["POST"])

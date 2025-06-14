@@ -1,6 +1,5 @@
 body {                     /* Estilo geral do corpo da página */
     font-family: Arial, sans-serif;  /* Fonte principal */
-    background-color: #f0f0f0;       /* Cor de fundo */
     margin: 0;                       /* Margem */
     padding: 0;                      /* Espaçamento */
 }
@@ -27,7 +26,6 @@ nav ul {                  /* Lista de navegação */
     padding: 0;                   /* Preenchimento */
     display: flex;                /* Deixa os itens na horizontal */
     justify-content: center;     /* Centralizar */
-    background-color: #e0e0e0;    /* Cor de fundo */
     margin: 0;                    /* Margem */
 }
 
