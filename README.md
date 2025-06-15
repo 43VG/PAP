@@ -25,8 +25,6 @@ Python, HTML, CSS, JavaScript
 ## Instruções para correr o projeto localmente pela primeira vez
 
 ```bash
-git clone https://github.com/43VG/PAP.git
-cd C:\PAP
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
