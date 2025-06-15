@@ -14,3 +14,8 @@ Thumbs.db
 *.log
 *.bak
 *.tmp
+
+# Ignorar pastas de dados e temporárias
+ficheiros_recebidos/
+graficos_temp/
+instance/
