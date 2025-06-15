@@ -22,16 +22,24 @@ Bootstrap 5
 
 Python, HTML, CSS, JavaScript
 
-## Instruções para correr o projeto localmente
+## Instruções para correr o projeto localmente pela primeira vez
 
-1. Clonar o repositório:
 ```bash
 git clone https://github.com/43VG/PAP.git
 cd C:\PAP
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
+cd Website
+python main.py
+```
+
+## Execuções subsequentes
+```bash
+cd PAP
 venv\Scripts\activate
 cd Website
 python main.py
-
+```
 
 
