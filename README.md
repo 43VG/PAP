@@ -31,12 +31,7 @@ cd C:\PAP
 pip install -r requirements.txt
 venv\Scripts\activate
 cd Website
-python criar_BD.py
 python main.py
 
-
-
-python criar_BD.py
-python main.py
 
 
