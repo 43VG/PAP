@@ -1,7 +1,33 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
+<div class="row">
+    <!-- Coluna da esquerda - Introdução do projeto -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h4 mb-0">Bem-vindo</h2>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Apoio visual de Dados Excel</h5>
+                <p class="card-text">
+                    O que pode fazer:
+                </p>
+                <ul class="list-unstyled">
+                    <li>✅ <strong>Carregar múltiplos ficheiros</strong> Excel</li>
+                    <li>✅ <strong>Escolher</strong> que folhas deseja analisar</li>
+                    <li>✅ <strong>Criar gráficos</strong> de Barras, Linhas e Pizza</li>
+                    <li>✅ <strong>Exportar</strong> gráficos em PNG e PDF</li>
+                    <li>✅ <strong>Visualizar</strong> dados de forma interativa</li>
+                </ul>
+                <div class="alert alert-info">
+                    <strong>💡 Dica:</strong> Faça login para começar a analisar seus dados!
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Coluna da direita - Formulário de login (igual ao login.html) -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">

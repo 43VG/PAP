@@ -25,10 +25,11 @@ Python, HTML, CSS, JavaScript
 ## Instruções para correr o projeto localmente pela primeira vez
 
 ```bash
+git clone https://github.com/43VG/PAP.git
+cd PAP
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-cd Website
 python main.py
 ```
 
@@ -36,7 +37,6 @@ python main.py
 ```bash
 cd PAP
 venv\Scripts\activate
-cd Website
 python main.py
 ```
 

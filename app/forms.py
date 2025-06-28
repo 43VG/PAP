@@ -17,7 +17,7 @@ class FormularioCriarConta(FlaskForm):  #Formulário usado para criar nova conta
     confirmar_senha = PasswordField('Confirmar Senha', validators=[DataRequired(message="Por favor, confirme sua senha."), EqualTo('senha', message="As senhas não coincidem.")])
     submeter = SubmitField('Criar Conta')
 
-    def validar_email(self, email):  #Validação para garantir que o email ainda não existe na base de dados
+    def validate_email(self, email):  #Validação para garantir que o email ainda não existe na base de dados
         utilizador = Utilizador.query.filter_by(email=email.data).first()  #Procura utilizador com o mesmo email
         if utilizador:  #Se já existir um utilizador com este email
             raise ValidationError('Este email já está registado. Por favor, escolha outro.')  #Mostra mensagem de erro
