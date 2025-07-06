@@ -19,3 +19,6 @@ Thumbs.db
 ficheiros_recebidos/
 graficos_temp/
 instance/
+
+# Ignorar ficheiro de variáveis de ambiente
+.env
